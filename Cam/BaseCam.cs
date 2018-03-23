@@ -37,7 +37,7 @@ public abstract class BaseCam : MonoBehaviour
             var players = GameObject.FindObjectsOfType<Player>();
             foreach (var player in players)
             {
-                targetList.Add(player.actorMover.transform);
+                targetList.Add(player.mover.transform);
             }
             targets = targetList.ToArray();
             movers.Clear();

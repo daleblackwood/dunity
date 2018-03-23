@@ -51,6 +51,7 @@ public class Game : MonoBehaviour
     public GameMode gameMode { get; private set; }
     public GameStage gameStage { get; private set; }
     public string[] sceneNames = null;
+    System.Action onNextLoadComplete = null;
 
     GameMode defaultMode = null;
 
@@ -165,13 +166,14 @@ public class Game : MonoBehaviour
     }
     */
 
-    public void LoadScene(string nextSceneName, bool showLoad = true)
+    public void LoadScene(string nextSceneName, bool showLoad = true, System.Action onLoadComplete = null)
     {
         if (isReady == false)
         {
             Debug.LogError("Already loading.");
             return;
         }
+        onNextLoadComplete = onLoadComplete;
         StartCoroutine(CoLoadScene(nextSceneName, showLoad));
     }
 
@@ -199,6 +201,11 @@ public class Game : MonoBehaviour
     {
         isReady = true;
         gameStage = GameObject.FindObjectOfType<GameStage>();
+
+        if (onNextLoadComplete != null)
+        {
+            onNextLoadComplete();
+        }
     }
 
     public void SetGameMode<T>() where T : GameMode

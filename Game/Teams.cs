@@ -17,26 +17,31 @@ public class Teams
 
     static public Color GetColor(Team team)
     {
-        return Color.HSVToRGB(GetHue(team), 0.7f, 0.7f);
+        return GetFactionForTeam(team).color;
     }
 
     static public float GetHue(Team team)
     {
-        return team == Team.A ? 0.5f : 0.0f;
-    }
-
-    static public float GetClothesValue(Team team)
-    {
-        return team == Team.A ? 0.0f : 0.5f;
+        return GetFactionForTeam(team).hue;
     }
 
     static public string GetName(Team team)
     {
-        return team == Team.A ? "Blues": "Reds";
+        return GetFactionForTeam(team).name;
     }
 
     static public Team GetTeamForPlayer(int index)
     {
         return index % 2 == 0 ? Team.A : Team.B;
+    }
+
+    static public Faction GetFactionForTeam(Team team)
+    {
+        return Factions.main.GetFaction((int)team);
+    }
+
+    static public Faction GetFactionForPlayer(int index)
+    {
+        return GetFactionForTeam(GetTeamForPlayer(index));
     }
 }

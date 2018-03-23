@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using Behave;
 
 public abstract class BaseAI : BaseControl
 {
     protected MinigameStage gameStage { get; private set; }
-    protected Player teammate { get; private set; }
 
     public Vector3 targetPos = Vector3.zero;
     Vector3 lerpedTargetPos = Vector3.zero;
@@ -18,14 +17,6 @@ public abstract class BaseAI : BaseControl
             Debug.LogError("AI couldn't find game.");
             return;
         }
-
-        teammate = GetTeammate();
-        if (teammate == null)
-        {
-            Debug.LogError("AI couldn't find teammate.");
-            return;
-        }
-
         targetPos = Vector3.zero;
 
         Game.WhenReady(OnReady);
@@ -84,19 +75,20 @@ public abstract class BaseAI : BaseControl
         return input;
     }
 
-    protected Player GetTeammate()
+    protected Actor[] GetTeammates()
     {
+        var result = new List<Actor>();
         var players = gameStage.GetPlayers();
         foreach (var p in players)
         {
             if (p == player)
                 continue;
 
-            if (p.team != player.team)
+            if (p.faction != player.faction)
                 continue;
 
-            return p;
+            result.Add(p);
         }
-        return null;
+        return result.ToArray();
     }
 }
