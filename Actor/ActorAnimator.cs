@@ -124,7 +124,7 @@ public class ActorAnimator : GameBehaviour
         if (animProps.ContainsKey(key))
             return true;
 
-        Debug.LogWarning("Can't set animation property " + key + " on " + name);
+        //Debug.LogWarning("Can't set animation property " + key + " on " + name);
 
         return false;
     }

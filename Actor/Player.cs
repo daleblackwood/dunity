@@ -1,15 +1,27 @@
-﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Plavatar;
+using System.Collections;
 
-public class Player : Actor 
+public class Player : GameBehaviour
 {
     public int index = -1;
+    int lastIndex = -1;
+    public Actor actor { get; private set; }
 
-    protected override void Start()
+    override protected void OnInit()
     {
-        control = ControlManager.main.GetControlForPlayer(this);
-        base.Start();
+        actor = GetComponentInChildren<Actor>();
+    }
+
+    void Update()
+    {
+        if (index != lastIndex)
+        {
+            var control = ControlManager.main.GetControlForPlayer(this);
+            if (control != null)
+            {
+                actor.SetControl(control);
+            }
+            lastIndex = index; 
+        }
     }
 }

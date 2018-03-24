@@ -11,6 +11,9 @@ public class Actor : GameBehaviour
     public ActorMover mover { get; private set; }
     public ActorAnimator animator { get; private set; }
 
+    public Player player { get; private set; }
+    public int playerIndex { get { return player == null ? -1 : player.index; } }
+
     protected BaseControl control = null;
     bool movementEnabled = false;
 
@@ -18,6 +21,7 @@ public class Actor : GameBehaviour
     {
         mover = GetComponentInChildren<ActorMover>();
         control = GetComponent<BaseControl>();
+        player = GetComponentInParent<Player>();
         EnableMovement(false);
         base.OnInit();
     }
@@ -30,6 +34,7 @@ public class Actor : GameBehaviour
 
     protected override void OnReady()
     {
+        GameStage.main.Register(this);
         base.OnReady();
     }
 
@@ -60,6 +65,11 @@ public class Actor : GameBehaviour
             }
             mover.UpdateActions(actions);
         }
+    }
+
+    public void SetControl(BaseControl control)
+    {
+        this.control = control;
     }
 
     public void EnableMovement(bool enable)

@@ -7,6 +7,8 @@ public class GameStage : GameBehaviour, IStateHost
 {
     static public GameStage main { get; private set; }
 
+    static public readonly Actor[] NO_ACTORS = new Actor[0];
+
     public PlayerSpawner[] spawnPoints;
     public bool isPlaying { get; protected set; }
 
@@ -15,6 +17,13 @@ public class GameStage : GameBehaviour, IStateHost
     Dictionary<Transform, Vector3> initPositions = new Dictionary<Transform, Vector3>();
     Dictionary<Transform, Quaternion> initRotations = new Dictionary<Transform, Quaternion>();
     protected List<Player> players = new List<Player>();
+    protected List<Actor> actors = new List<Actor>();
+
+    Dictionary<string, Actor[]> cacheFriends = new Dictionary<string, Actor[]>();
+    Dictionary<string, Actor[]> cacheFoes = new Dictionary<string, Actor[]>();
+    Actor[] cacheActors = null;
+
+    bool isDirtyCache = false;
 
     protected override void Awake()
     {
@@ -25,8 +34,15 @@ public class GameStage : GameBehaviour, IStateHost
 
     protected override void OnInit()
     {
+        main = this;
         Game.MakeReady();
         base.OnInit();
+    }
+
+    protected override void OnEnable()
+    {
+        main = this;
+        base.OnEnable();
     }
 
     protected virtual void Spawn()
@@ -36,6 +52,8 @@ public class GameStage : GameBehaviour, IStateHost
     protected override void OnReady()
     {
         Spawn();
+
+        ReindexActors();
 
         base.OnReady();
         StartStage();
@@ -51,8 +69,115 @@ public class GameStage : GameBehaviour, IStateHost
         StartStage();
     }
 
-    protected virtual void Update()
+    public void Register(Actor actor)
     {
+        if (actors.Contains(actor))
+            return;
+
+        actors.Add(actor);
+        isDirtyCache = true;
+    }
+
+    protected virtual void LateUpdate()
+    {
+        for (int i=actors.Count-1; i>=0; i--)
+        {
+            if (actors[i] == null)
+            {
+                isDirtyCache = true;
+            }
+        }
+
+        if (isDirtyCache)
+        {
+            UpdateCache();
+        }
+    }
+
+    void ReindexActors()
+    {
+        var allActors = GameObject.FindObjectsOfType<Actor>();
+        foreach (var actor in allActors)
+        {
+            if (actor == null || actor.isActiveAndEnabled == false)
+                continue;
+            
+            Register(actor);
+        }
+        UpdateCache();
+    }
+
+    void UpdateCache()
+    {
+        cacheActors = NO_ACTORS;
+        cacheFriends.Clear();
+        cacheFoes.Clear();
+
+        var listActors = new List<Actor>();
+        var listFriends = new Dictionary<string, List<Actor>>();
+        var listFoes = new Dictionary<string, List<Actor>>();
+
+        // clean and build actor list
+        for (int i=actors.Count-1; i>=0; i--)
+        {
+            var actor = actors[i];
+
+            if (actor == null || actor.isActiveAndEnabled == false)
+            {
+                actors.RemoveAt(i);
+                continue;
+            }
+
+            listActors.Add(actor);
+            
+            if (actor.faction == null)
+                continue;
+
+            var factionKey = actor.faction.GetKey();
+            if (listFriends.ContainsKey(factionKey) == false)
+            {
+                listFriends[factionKey] = new List<Actor>();
+            }
+
+            if (listFoes.ContainsKey(factionKey) == false)
+            {
+                listFoes[factionKey] = new List<Actor>();
+            }
+
+            listFriends[factionKey].Add(actor);
+        }
+
+        cacheActors = listActors.ToArray();
+
+        // list foes
+        foreach (var actor in actors)
+        {
+            if (actor.faction == null)
+                continue;
+            
+            var factionKey = actor.faction.GetKey();
+           
+            foreach (var pair in listFoes)
+            {
+                var foeKey = pair.Key;
+                if (factionKey == foeKey)
+                    continue;
+
+                pair.Value.Add(actor);
+            }
+        }
+
+        // build faction arrays
+        foreach (var pair in listFriends)
+        {
+            cacheFriends[pair.Key] = pair.Value.ToArray();
+        }
+        foreach (var pair in listFoes)
+        {
+            cacheFoes[pair.Key] = pair.Value.ToArray();
+        }
+
+        isDirtyCache = false;
     }
 
     public virtual void PickState()
@@ -107,5 +232,82 @@ public class GameStage : GameBehaviour, IStateHost
     public Player[] GetPlayers()
     {
         return players.ToArray();
+    }
+
+    public Actor[] GetActors()
+    {
+        if (cacheActors == null || cacheActors.Length < 1)
+            return NO_ACTORS;
+        
+        return cacheActors;
+    }
+
+    public Actor[] GetFriends(Faction faction)
+    {
+        var factionKey = faction.GetKey();
+        if (cacheFriends.ContainsKey(factionKey) == false)
+            return NO_ACTORS;
+        
+        var cache = cacheFriends[factionKey];
+        if (cache == null || cache.Length < 1)
+            return NO_ACTORS;
+
+        return cache;
+    }
+
+    public Actor[] GetFoes(Faction faction)
+    {
+        var factionKey = faction.GetKey();
+        if (cacheFoes.ContainsKey(factionKey) == false)
+            return NO_ACTORS;
+
+        var cache = cacheFoes[factionKey];
+        if (cache == null || cache.Length < 1)
+            return NO_ACTORS;
+
+        return cache;
+    }
+
+    public Actor GetNearestFriend(Actor actor)
+    {
+        Actor result = null;
+        var friends = GetFriends(actor.faction);
+        if (friends.Length > 1)
+        {
+            float nearDist2 = float.PositiveInfinity;
+            foreach (var friend in friends)
+            {
+                if (friend == actor)
+                    continue;
+
+                float dist2 = (friend.mover.transform.position - actor.mover.transform.position).sqrMagnitude;
+                if (dist2 > nearDist2)
+                    continue;
+
+                result = friend;
+                nearDist2 = dist2;
+            }
+        }
+        return result;
+    }
+
+    public Actor GetNearestFoe(Actor actor)
+    {
+        Actor result = null;
+        var foes = GetFoes(actor.faction);
+        if (foes.Length > 0)
+        {
+            float nearDist2 = float.PositiveInfinity;
+            foreach (var foe in foes)
+            {
+                float dist2 = (foe.mover.transform.position - actor.mover.transform.position).sqrMagnitude;
+                if (dist2 > nearDist2)
+                    continue;
+
+                result = foe;
+                nearDist2 = dist2;
+            }
+        }
+        return result;
     }
 }

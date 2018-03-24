@@ -30,7 +30,7 @@ public class PlatformAI : BaseAI
     public override void OnReady()
     {   
         base.OnReady();
-        sensor = new PlatformSensor(player.mover);
+        sensor = new PlatformSensor(actor.mover);
         PickState();
     }
 

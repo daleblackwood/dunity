@@ -4,14 +4,14 @@ using Behave;
 
 public abstract class BaseAI : BaseControl
 {
-    protected MinigameStage gameStage { get; private set; }
+    protected GameStage gameStage { get; private set; }
 
     public Vector3 targetPos = Vector3.zero;
     Vector3 lerpedTargetPos = Vector3.zero;
 
     public override void Reset()
     {
-        gameStage = GameObject.FindObjectOfType<MinigameStage>();
+        gameStage = GameStage.main;
         if (gameStage == null)
         {
             Debug.LogError("AI couldn't find game.");
@@ -56,7 +56,7 @@ public abstract class BaseAI : BaseControl
 
         if (Application.isEditor)
         {
-            var color = Color.HSVToRGB(player.index * 0.2f, 1.0f, 1.0f);
+            var color = actor.faction.color;
             Debug.DrawLine(transform.position + Vector3.up * 0.5f, lerpedTargetPos + Vector3.up * 0.5f, color);
             DebugTools.DrawSphere(lerpedTargetPos + Vector3.up * 0.5f, color, 0.5f);
         }
@@ -73,22 +73,5 @@ public abstract class BaseAI : BaseControl
         var input = new Vector2(move.x, move.z);
         input.Normalize();
         return input;
-    }
-
-    protected Actor[] GetTeammates()
-    {
-        var result = new List<Actor>();
-        var players = gameStage.GetPlayers();
-        foreach (var p in players)
-        {
-            if (p == player)
-                continue;
-
-            if (p.faction != player.faction)
-                continue;
-
-            result.Add(p);
-        }
-        return result.ToArray();
     }
 }

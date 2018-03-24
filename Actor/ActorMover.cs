@@ -33,7 +33,9 @@ public class ActorMover : GameBehaviour
     public Actions actions;
     public float speed = 12.0f;
     public float jump = 1.0f;
-    public bool enablePushing = true;
+    public bool canPush = true;
+    public bool canSwim = false;
+    public bool canJump = false;
     [Range(0.0f, 1.0f)] public float power = 0.75f;
 
     public bool onGround { get; private set; }
@@ -41,7 +43,7 @@ public class ActorMover : GameBehaviour
     public bool inWater { get; protected set; }
     public bool pushing { get; private set; }
     public bool knocking { get { return knock.sqrMagnitude > 0.1f; } }
-    public Player player { get; private set; }
+    public Actor player { get; private set; }
 
     protected Rigidbody body;
     protected new CapsuleCollider collider;
@@ -96,7 +98,7 @@ public class ActorMover : GameBehaviour
         layerCast = GetCastMask();
         layerOneWay = LayerMask.NameToLayer("OneWay");
         layerWater = LayerMask.NameToLayer("Water");
-        player = GetComponentInParent<Player>();
+        player = GetComponentInParent<Actor>();
     }
 
     protected override void OnEnable()
@@ -221,7 +223,7 @@ public class ActorMover : GameBehaviour
             }   
             else
             {
-                if (enablePushing)
+                if (canPush)
                 {
                     pushing = onGround;
                 }
@@ -230,19 +232,22 @@ public class ActorMover : GameBehaviour
             //DebugTools.DrawSphere(wallOrigin, onWall ? Color.red : Color.white, radius);
         }
 
-        float diagRadius = collider.height * 0.9f;
-        if (Cast(out hitDiag, collider.bounds.center, transform.forward - Vector3.up * 0.9f, diagRadius))
+        if (canJump)
         {
-            if (hitDiag.normal.y > 0.8f && actions.move.sqrMagnitude > 0.1f)
+            float diagRadius = collider.height * 0.9f;
+            if (Cast(out hitDiag, collider.bounds.center, transform.forward - Vector3.up * 0.9f, diagRadius))
             {
-                if (body.velocity.y < 5.0f)
+                if (hitDiag.normal.y > 0.8f && actions.move.sqrMagnitude > 0.1f)
                 {
-                    body.AddForce(Vector3.up * 25.0f, ForceMode.Impulse);
+                    if (body.velocity.y < 5.0f)
+                    {
+                        body.AddForce(Vector3.up * 25.0f, ForceMode.Impulse);
+                    }
                 }
             }
         }
 
-        if (enablePushing) 
+        if (canPush) 
         {
             animator.SetBool("Pushing", pushing);
         }
@@ -302,9 +307,12 @@ public class ActorMover : GameBehaviour
             {
                 inWater = true;
                 timeLastWater = Time.time;
-                if (hitInfo.distance < dist * 0.5f)
+                if (canSwim)
                 {
-                    body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
+                    if (hitInfo.distance < dist * 0.5f)
+                    {
+                        body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
+                    }
                 }
             }
             else

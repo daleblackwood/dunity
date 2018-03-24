@@ -21,14 +21,9 @@ public class Factions : MonoBehaviour
 
     public Faction[] factions;
 
-
     void Awake()
     {
         _main = this;
-        if (factions == null || factions.Length < 1)
-        {
-            
-        }
         GameObject.DontDestroyOnLoad(gameObject);
     }
 

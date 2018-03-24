@@ -5,18 +5,21 @@ using UnityEngine;
 public abstract class BaseControl : MonoBehaviour
 {
     public Player player { get; protected set; }
-    public Actions actions { get { PlayerCheck(); return player.actions; } }
+    public Actor actor { get; protected set; } 
+    public Actions actions { get { PlayerCheck(); return actor.actions; } }
 
     int lastUpdateFrame = 0;
 
     protected virtual void Awake()
     {
         player = GetComponent<Player>();
+        actor = GetComponent<Actor>();
     }
 
     public void Init(Player player)
     {
         this.player = player;
+        this.actor = player.actor;
         enabled = true;
         Reset();
     }
@@ -36,7 +39,7 @@ public abstract class BaseControl : MonoBehaviour
 
     void PlayerCheck()
     {
-        if (player == null)
+        if (actor == null)
         {
             throw new UnityException("Player isn't initialised.");
         }

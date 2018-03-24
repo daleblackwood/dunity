@@ -17,7 +17,8 @@ public class InputControl : BaseControl
     public override void Reset()
     {
         base.Reset();
-        device = ControlManager.main.GetDevice(player.index);
+        int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
+        device = ControlManager.main.GetDevice(index);
         actionSet = new PartyActionSet();
         actionSet.Device = device;
     }
@@ -30,7 +31,8 @@ public class InputControl : BaseControl
             actionSet.UpdateActions(actions);
         }
 
-        if (player.index == 0)
+        int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
+        if (index == 0)
         {
             var keyMove = Vector2.zero;
             if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))

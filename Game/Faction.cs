@@ -14,4 +14,14 @@ public class Faction : ScriptableObject
             return hsv.x;
         }
     }
+
+    public override int GetHashCode()
+    {
+        return GetKey().GetHashCode();
+    }
+
+    public string GetKey()
+    {
+        return name.ToLower();
+    }
 }

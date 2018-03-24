@@ -1,4 +1,4 @@
 ﻿public interface ISpawnHandler
 {
-    void OnSpawn(Player player);
+    void OnSpawn(Actor player);
 }
