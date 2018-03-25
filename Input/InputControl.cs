@@ -7,6 +7,7 @@ public class InputControl : BaseControl
 {
     InputDevice device = null;
     PartyActionSet actionSet = null;
+    TouchInput touch = null;
 
     public void DebugAssign()
     {
@@ -33,7 +34,13 @@ public class InputControl : BaseControl
 
         int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
         if (index == 0)
-        {
+    {
+            if (touch == null)
+            {
+                touch = new TouchInput();
+            }
+            touch.UpdateActions(actions);
+
             var keyMove = Vector2.zero;
             if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))
             {

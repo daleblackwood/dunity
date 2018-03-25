@@ -13,7 +13,7 @@ public class ActorMover : GameBehaviour
         );
     }
 
-    private class CollideWater
+    private class WaterContact
     {
         public const float OFF_TIME = 0.1f;
 
@@ -21,7 +21,7 @@ public class ActorMover : GameBehaviour
         public float offTime = OFF_TIME;
         public Vector3 lastPos = Vector3.zero;
 
-        public CollideWater(Collider collider)
+        public WaterContact(Collider collider)
         {
             this.collider = collider;
             lastPos = collider.transform.position;
@@ -87,8 +87,8 @@ public class ActorMover : GameBehaviour
     protected float knockPower = 1.0f;
     Vector3 knock = Vector3.zero;
 
-    List<Collider> oneWays = new List<Collider>();
-    List<CollideWater> waters = new List<CollideWater>();
+    Collider contactingOneWay = null;
+    WaterContact contactingWater = null;
 
     protected override void OnInit()
     {
@@ -146,25 +146,18 @@ public class ActorMover : GameBehaviour
             groundY = hitGround.point.y;
         }
 
-        // one way platforms
-        if (oneWays.Count > 0)
+        // one way platform
+        if (contactingOneWay != null)
         {
-            oneWays.Sort((a, b) => {
-                return a.bounds.max.y > b.bounds.max.y ? -1 : 1;
-            });
-            for (int i = oneWays.Count-1; i >= 0; i--)
+            var placed = PlaceOnOneWay(contactingOneWay);
+            if (placed == false)
             {
-                var oneWay = oneWays[i];
-                var placed = PlaceOnOneWay(oneWay);
-                if (placed == false)
-                {
-                    oneWays.RemoveAt(i);
-                    continue;
-                }
-
+                contactingOneWay = null;
+            }
+            else
+            {
                 onGround = true;
-                groundY = oneWay.bounds.max.y;
-                break;
+                groundY = contactingOneWay.bounds.max.y;
             }
         }
 
@@ -262,46 +255,25 @@ public class ActorMover : GameBehaviour
     {
         // water collisions
         inWater = false;
-        if (waters.Count > 0)
+        if (contactingWater != null)
         {
-            var waterOrigin = transform.position;
-            for (int i=waters.Count-1; i >= 0; i--)
+            var water = contactingWater;
+            var lastPos = water.lastPos;
+            water.lastPos = water.collider.transform.position;
+            var waterMove = water.lastPos - lastPos;
+            waterMove *= 0.8f;
+            waterMove.y = 0.0f;
+
+            if (waterMove.sqrMagnitude > 0.01f)
             {
-                var water = waters[i];
-
-                var lastPos = water.lastPos;
-                water.lastPos = water.collider.transform.position;
-                var waterMove = water.lastPos - lastPos;
-                waterMove *= 0.8f;
-                waterMove.y = 0.0f;
-
-                if (waterMove.sqrMagnitude > 0.01f)
-                {
-                    transform.position += waterMove;
-                }
-
-                bool remove = false;
-                if (water.collider.bounds.Contains(waterOrigin) == false)
-                {
-                    remove = true;
-                }
-
-                if (remove)
-                {
-                    water.offTime -= Time.deltaTime;
-                    if (water.offTime < 0.0f)
-                    {
-                        waters.RemoveAt(i);
-                    }
-                    continue;
-                }
-
-                water.offTime = 0.0f;
+                transform.position += waterMove;
             }
 
+            float waterIn = 0.5f;
+
             var origin = collider.bounds.center;
-            origin.y = collider.bounds.max.y;
-            var dist = origin.y - collider.bounds.min.y + 0.5f;
+            origin.y += waterIn;
+            var dist = origin.y - collider.bounds.min.y;
             RaycastHit hitInfo;
             if (Physics.Raycast(origin, Vector3.down, out hitInfo, dist, 1 << layerWater, QueryTriggerInteraction.Collide))
             {
@@ -309,7 +281,7 @@ public class ActorMover : GameBehaviour
                 timeLastWater = Time.time;
                 if (canSwim)
                 {
-                    if (hitInfo.distance < dist * 0.5f)
+                    if (hitInfo.distance < dist * 0.5f - waterIn)
                     {
                         body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
                     }
@@ -321,7 +293,15 @@ public class ActorMover : GameBehaviour
             }
         }
 
-        animator.SetBool("InWater", inWater || timeSinceWater < 0.1f);
+        if (timeSinceWater > 0.1f)
+        {
+            contactingWater = null;
+        }
+
+        if (canSwim)
+        {
+            animator.SetBool("InWater", inWater || timeSinceWater < 0.1f);
+        }
     }
 
     bool PlaceOnOneWay(Collider oneWay)
@@ -375,6 +355,7 @@ public class ActorMover : GameBehaviour
 
             var dir = defaultDir;
 
+            /*
             var meshC = c as MeshCollider;
             if (meshC == null || meshC.convex)
             {
@@ -382,6 +363,7 @@ public class ActorMover : GameBehaviour
                 var dif = p - origin;
                 dir = dif.normalized;
             }
+            */
 
             Physics.Raycast(origin, dir, out hitInfo, radius, layerCast, QueryTriggerInteraction.Ignore);
             Debug.DrawLine(origin, hitInfo.point);
@@ -497,7 +479,7 @@ public class ActorMover : GameBehaviour
         if (knocking)
         {
             moveForce = knock * 100.0f;
-            knock *= MathUtils.FixedDeltaEase(0.9f);
+            knock *= MathUtils.FixedDeltaEase(0.5f);
 
             var knockDir = -knock.normalized;
             knockDir.y = 0.0f;
@@ -585,9 +567,9 @@ public class ActorMover : GameBehaviour
         onGround = false;
     }
 
-    public void Knock(Vector3 knockDir)
+    public void Knock(Vector3 knockForce)
     {
-        knock = knockDir.normalized * knockPower;
+        knock = knockForce * knockPower;
         body.AddForce(knock * 100.0f);
     }
 
@@ -632,22 +614,13 @@ public class ActorMover : GameBehaviour
         if (other.gameObject.layer == layerOneWay)
         {
             PlaceOnOneWay(other);
-            if (oneWays.Contains(other) == false)
-            {
-                oneWays.Add(other);
-            }
+            contactingOneWay = other;
             return;
         }
 
         if (other.gameObject.layer == layerWater)
         {
-            foreach (var water in waters)
-            {
-                if (water.collider == other)
-                    return;
-            }
-
-            waters.Add(new CollideWater(other));
+            contactingWater = new WaterContact(other);
             return;
         }
     }
