@@ -81,6 +81,7 @@ public class ActorMover : GameBehaviour
     int layerOneWay = 0;
     int layerWater = 0;
     Vector3 wallOrigin = Vector3.zero;
+    float wallAvoidDist = 1.0f;
     bool wasOnGround = false;
     bool bounced = false;
 
@@ -89,6 +90,9 @@ public class ActorMover : GameBehaviour
 
     Collider contactingOneWay = null;
     WaterContact contactingWater = null;
+
+
+    public float wallHitDot = 0.0f;
 
     protected override void OnInit()
     {
@@ -185,9 +189,42 @@ public class ActorMover : GameBehaviour
 
         radius = collider.radius * 1.2f;
         var dir = forward;
+
+        // wall-low
+        onWall = false;
+        wallOrigin = collider.bounds.center;
+        wallOrigin.y = Mathf.Lerp(wallOrigin.y, collider.bounds.min.y, 0.9f);
+        wallAvoidDist = collider.radius * 2.6f;
+
+        if (Cast(out hitWall, wallOrigin, transform.forward, wallAvoidDist))
+        {
+            onWall = hitWall.rigidbody == null || onGround == false;
+            if (onWall)
+            {
+                wallHitDot = Vector3.Dot(transform.forward, hitWall.normal);
+                onWall = wallHitDot < -0.2f;
+            }
+            /*
+            if (onWall)
+            {
+                onWall = Mathf.Abs(hitWall.normal.y) < 0.3f;
+                if (onWall == false && onGround == false)
+                {
+                    body.AddForce(Vector3.up * 2.0f, ForceMode.VelocityChange);
+                }
+            }
+            */
+            else
+            {
+                if (canPush)
+                {
+                    pushing = onGround;
+                }
+            }
+        }
+        /*
         wallOrigin = collider.bounds.center;
         wallOrigin.y = collider.bounds.min.y + radius + collider.bounds.size.y * 0.15f;
-
         if (SphericalCast(out hitWall, wallOrigin, transform.forward, collider.radius * 1.6f))
         {
             onWall = hitWall.rigidbody == null || onGround == false;
@@ -224,9 +261,11 @@ public class ActorMover : GameBehaviour
 
             //DebugTools.DrawSphere(wallOrigin, onWall ? Color.red : Color.white, radius);
         }
+        */
 
         if (canJump)
         {
+            /*
             float diagRadius = collider.height * 0.9f;
             if (Cast(out hitDiag, collider.bounds.center, transform.forward - Vector3.up * 0.9f, diagRadius))
             {
@@ -238,6 +277,7 @@ public class ActorMover : GameBehaviour
                     }
                 }
             }
+            */
         }
 
         if (canPush) 
@@ -269,10 +309,10 @@ public class ActorMover : GameBehaviour
                 transform.position += waterMove;
             }
 
-            float waterIn = 0.5f;
+            float waterIn = 0.1f;
 
             var origin = collider.bounds.center;
-            origin.y += waterIn;
+            origin.y += waterIn + 0.7f;
             var dist = origin.y - collider.bounds.min.y;
             RaycastHit hitInfo;
             if (Physics.Raycast(origin, Vector3.down, out hitInfo, dist, 1 << layerWater, QueryTriggerInteraction.Collide))
@@ -345,6 +385,7 @@ public class ActorMover : GameBehaviour
         return isHit;
     }
 
+    /*
     bool SphericalCast(out RaycastHit hitInfo, Vector3 origin, Vector3 defaultDir, float radius)
     {
         var colliders = Physics.OverlapSphere(origin, radius, layerCast, QueryTriggerInteraction.Ignore);
@@ -354,17 +395,6 @@ public class ActorMover : GameBehaviour
                 continue;
 
             var dir = defaultDir;
-
-            /*
-            var meshC = c as MeshCollider;
-            if (meshC == null || meshC.convex)
-            {
-                var p = c.ClosestPoint(origin);
-                var dif = p - origin;
-                dir = dif.normalized;
-            }
-            */
-
             Physics.Raycast(origin, dir, out hitInfo, radius, layerCast, QueryTriggerInteraction.Ignore);
             Debug.DrawLine(origin, hitInfo.point);
             return true;
@@ -372,6 +402,7 @@ public class ActorMover : GameBehaviour
         hitInfo = new RaycastHit();
         return false;
     }
+    */
 
     public void SetDownTime(float downTime)
     {
@@ -465,13 +496,30 @@ public class ActorMover : GameBehaviour
 
         if (onWall)
         {
-            var hitNorm = hitWall.normal;
-            hitNorm.y = 0.0f;
-            hitNorm.Normalize();
-            var hitRight = Vector3.Cross(hitNorm, Vector3.up);
-            targetVelocity += hitNorm * targetVelocity.magnitude;
-            targetVelocity *= 0.5f;
-            body.velocity += hitNorm * (body.velocity.magnitude * 0.9f);
+            var wallDir = hitWall.normal;
+            wallDir.y = 0.0f;
+            wallDir.Normalize();
+
+            var targetDir = targetVelocity.normalized;
+            var targetWallDot = Vector3.Dot(targetDir, -wallDir);
+
+            if (targetWallDot > 0.75f)
+            {
+                // remove all forward
+                targetVelocity = targetVelocity.y * Vector3.up;
+                body.velocity = body.velocity.y * Vector3.up;
+            }
+            else if (targetWallDot > 0.0f)
+            {
+                // redirect motion to wall cross
+                var crossA = Vector3.Cross(wallDir, Vector3.up);
+                var crossB = -crossA;
+                var dotA = Vector3.Dot(targetDir, crossA);
+                var dotB = Vector3.Dot(targetDir, crossB);
+                var newDir = dotA > dotB ? crossA : crossB;
+                targetVelocity = targetVelocity.magnitude * newDir;
+                body.velocity = body.velocity.magnitude * newDir;
+            }
         }
 
         var moveForce = targetVelocity;

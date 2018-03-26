@@ -32,4 +32,42 @@ public static class MathUtils
             end * (-1.5f* pcCb + 2.0f * pcSq + 0.5f * pc) +
             next * (0.5f * pcCb - 0.5f * pcSq);
     }
+
+    public static Vector3 ProjectPointOnLine(Vector3 linePoint, Vector3 dir, Vector3 point)
+    {
+        dir.Normalize();
+        var linePointToPoint = point - linePoint;
+        var t = Vector3.Dot(linePointToPoint, dir);
+        return linePoint + dir * Mathf.Clamp01(t);
+    }
+
+    public static Vector3 ProjectPointOnAxis(Vector3 linePoint, Vector3 dir, Vector3 point)
+    {
+        dir.Normalize();
+        var linePointToPoint = point - linePoint;
+        var t = Vector3.Dot(linePointToPoint, dir);
+        return linePoint + dir * t;
+    }
+
+    public static Vector3 RemoveVectorDirectionXZ(Vector3 vec, Vector3 dir)
+    {
+        dir.Normalize();
+        var dirDot = Vector3.Dot(vec.normalized, dir);
+        if (dirDot > 0.0f)
+        {
+            // vec = 2,2,0
+            // dot = 1,0,0
+
+            // 1. *-dot = -2,2,0 // no
+
+            // 2. xup = 0,1,0
+            // *xup = 0,2,0 // yes
+
+            // 3.
+
+            var cross = Vector3.Dot(dir, Vector3.down);
+            vec *= cross;
+        }
+        return vec;
+    }
 }

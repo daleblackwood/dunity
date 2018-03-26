@@ -11,6 +11,9 @@ public class GameBehaviour : MonoBehaviour
     protected Quaternion initRotation = Quaternion.identity;
     protected Vector3 initScale = Vector3.one;
 
+    public float timeSinceReady { get { return Time.time - timeLastReady; } }
+    float timeLastReady = 0.0f;
+
     bool firstReadied = false;
 
     protected virtual void Awake() 
@@ -51,8 +54,11 @@ public class GameBehaviour : MonoBehaviour
     void CallReady()
     {
         CallInit();
-        CallFirstReady();
+
+        timeLastReady = Time.time;
         isReady = true;
+
+        CallFirstReady();
         OnReady();
     }
 

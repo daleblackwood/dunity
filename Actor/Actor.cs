@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Actor : GameBehaviour 
+public class Actor : Entity 
 {
     public Faction faction = null;
 
@@ -10,6 +10,9 @@ public class Actor : GameBehaviour
 
     public ActorMover mover { get; private set; }
     public ActorAnimator animator { get; private set; }
+
+    public int maxHealth = 3;
+    public int health = 3;
 
     public Player player { get; private set; }
     public int playerIndex { get { return player == null ? -1 : player.index; } }
@@ -42,6 +45,12 @@ public class Actor : GameBehaviour
     {
         EnableMovement(false);
         EnableMovement(true);
+    }
+
+    public override void Reset()
+    {
+        health = maxHealth;
+        base.Reset();
     }
 
     protected override void OnDisable()

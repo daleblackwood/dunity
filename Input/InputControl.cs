@@ -23,6 +23,7 @@ public class InputControl : BaseControl
         actionSet = new PartyActionSet();
         actionSet.Device = device;
     }
+
     protected override void UpdateActions()
     {
         actions.Reset();
@@ -34,12 +35,16 @@ public class InputControl : BaseControl
 
         int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
         if (index == 0)
-    {
+        {
             if (touch == null)
             {
                 touch = new TouchInput();
             }
-            touch.UpdateActions(actions);
+
+            if (Application.isMobilePlatform || Input.GetMouseButton(0))
+            {
+                touch.UpdateActions(actions);
+            }
 
             var keyMove = Vector2.zero;
             if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.W))
