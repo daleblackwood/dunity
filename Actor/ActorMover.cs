@@ -91,8 +91,8 @@ public class ActorMover : GameBehaviour
     Collider contactingOneWay = null;
     WaterContact contactingWater = null;
 
-
-    public float wallHitDot = 0.0f;
+    // FIXME: Remove debug float
+    public float debugFloat = 0.0f;
 
     protected override void OnInit()
     {
@@ -142,9 +142,10 @@ public class ActorMover : GameBehaviour
         // ground
         onGround = false;
         var radius = collider.radius;
-        var origin = middle;
-        origin.y += radius;
-        if (Cast(out hitGround, origin, Vector3.down, radius * 1.7f))
+        var origin = collider.bounds.center;
+        var dist = collider.height * 0.5f + 0.01f;
+        //origin.y += radius;
+        if (Cast(out hitGround, origin, Vector3.down, dist))
         {
             onGround = hitGround.normal.y > 0.3f;
             groundY = hitGround.point.y;
@@ -186,100 +187,29 @@ public class ActorMover : GameBehaviour
         // walls
         onWall = false;
         pushing = false;
-
-        radius = collider.radius * 1.2f;
-        var dir = forward;
-
-        // wall-low
-        onWall = false;
-        wallOrigin = collider.bounds.center;
-        wallOrigin.y = Mathf.Lerp(wallOrigin.y, collider.bounds.min.y, 0.9f);
         wallAvoidDist = collider.radius * 2.6f;
-
-        wallOrigin.y = collider.bounds.max.y - collider.radius + 0.01f;
-        if (Physics.SphereCast(wallOrigin, collider.radius, transform.forward, out hitWall, wallAvoidDist, layerCast))
-        //if (Cast(out hitWall, wallOrigin, transform.forward, wallAvoidDist))
-        {
-            onWall = hitWall.rigidbody == null || onGround == false;
-            if (onWall)
-            {
-                wallHitDot = Vector3.Dot(transform.forward, hitWall.normal);
-                onWall = wallHitDot < -0.2f;
-            }
-            /*
-            if (onWall)
-            {
-                onWall = Mathf.Abs(hitWall.normal.y) < 0.3f;
-                if (onWall == false && onGround == false)
-                {
-                    body.AddForce(Vector3.up * 2.0f, ForceMode.VelocityChange);
-                }
-            }
-            */
-            else
-            {
-                if (canPush)
-                {
-                    pushing = onGround;
-                }
-            }
-        }
-        /*
         wallOrigin = collider.bounds.center;
-        wallOrigin.y = collider.bounds.min.y + radius + collider.bounds.size.y * 0.15f;
-        if (SphericalCast(out hitWall, wallOrigin, transform.forward, collider.radius * 1.6f))
+        wallOrigin.y = collider.bounds.min.y;
+        wallOrigin.y += collider.radius * 1.3f;
+        wallOrigin -= transform.forward * collider.radius;
+
+        if (Cast(out hitWall, wallOrigin, transform.forward, wallAvoidDist))
         {
-            onWall = hitWall.rigidbody == null || onGround == false;
-            if (onWall)
+            // rigidbodys can't be pushed in mid-air
+            bool isWall = hitWall.rigidbody == null || onGround == false;
+            if (isWall)
             {
-                onWall = Vector3.Dot(transform.forward, hitWall.normal) < -0.2f;
+                // slopes aren't walls
+                onWall = hitWall.normal.y < 0.5f;
             }
-            if (onWall)
-            {
-                onWall = Mathf.Abs(hitWall.normal.y) < 0.3f;
-                if (onWall == false && onGround == false)
-                {
-                    body.AddForce(Vector3.up * 2.0f, ForceMode.VelocityChange);
-                }
-            }
-            if (onWall)
-            {
-                float pushDist = radius * 1.1f;
-                var dif = hitWall.point - wallOrigin;
-                if (dif.sqrMagnitude < pushDist * pushDist)
-                {
-                    dif = hitWall.normal;
-                    dif.y = 0.0f;
-                    transform.position += dif.normalized * pushDist * 0.8f;
-                }   
-            }   
             else
             {
+                // rigidbodys can be pushed on ground
                 if (canPush)
                 {
                     pushing = onGround;
                 }
             }
-
-            //DebugTools.DrawSphere(wallOrigin, onWall ? Color.red : Color.white, radius);
-        }
-        */
-
-        if (canJump)
-        {
-            /*
-            float diagRadius = collider.height * 0.9f;
-            if (Cast(out hitDiag, collider.bounds.center, transform.forward - Vector3.up * 0.9f, diagRadius))
-            {
-                if (hitDiag.normal.y > 0.8f && actions.move.sqrMagnitude > 0.1f)
-                {
-                    if (body.velocity.y < 5.0f)
-                    {
-                        body.AddForce(Vector3.up * 25.0f, ForceMode.Impulse);
-                    }
-                }
-            }
-            */
         }
 
         if (canPush) 
@@ -380,31 +310,18 @@ public class ActorMover : GameBehaviour
 
     protected bool Cast(out RaycastHit hitInfo, Vector3 origin, Vector3 dir, float dist)
     {
-        dist = dist > 0.0f ? dist : collider.radius;
+        var radius = collider.radius;
+        dist = dist > 0.0f ? dist : radius;
         dir.Normalize();
-        var isHit = Physics.Raycast(origin, dir, out hitInfo, dist, layerCast, QueryTriggerInteraction.Ignore);
+        var isHit = Physics.SphereCast(origin, collider.radius, dir, out hitInfo, dist - collider.radius, layerCast, QueryTriggerInteraction.Ignore);
+        #if UNITY_EDITOR
+        var color = isHit ? Color.red : Color.white;
         Debug.DrawLine(origin, isHit ? hitInfo.point : origin + dir * dist, isHit ? Color.red : Color.white);
+        DebugTools.DrawSphere(origin, color, radius);
+        DebugTools.DrawSphere(isHit ? hitInfo.point : origin + dir * dist, color, radius);
+        #endif
         return isHit;
     }
-
-    /*
-    bool SphericalCast(out RaycastHit hitInfo, Vector3 origin, Vector3 defaultDir, float radius)
-    {
-        var colliders = Physics.OverlapSphere(origin, radius, layerCast, QueryTriggerInteraction.Ignore);
-        foreach (var c in colliders)
-        {
-            if (c.transform.IsChildOf(transform))
-                continue;
-
-            var dir = defaultDir;
-            Physics.Raycast(origin, dir, out hitInfo, radius, layerCast, QueryTriggerInteraction.Ignore);
-            Debug.DrawLine(origin, hitInfo.point);
-            return true;
-        }
-        hitInfo = new RaycastHit();
-        return false;
-    }
-    */
 
     public void SetDownTime(float downTime)
     {
@@ -498,6 +415,7 @@ public class ActorMover : GameBehaviour
 
         if (onWall)
         {
+            // cancel or redirect forward momentum when on a wall
             var wallDir = hitWall.normal;
             wallDir.y = 0.0f;
             wallDir.Normalize();
@@ -519,8 +437,19 @@ public class ActorMover : GameBehaviour
                 var dotA = Vector3.Dot(targetDir, crossA);
                 var dotB = Vector3.Dot(targetDir, crossB);
                 var newDir = dotA > dotB ? crossA : crossB;
-                targetVelocity = targetVelocity.magnitude * newDir;
-                body.velocity = body.velocity.magnitude * newDir;
+                var slowDown = 0.7f;
+                targetVelocity = targetVelocity.magnitude * newDir * slowDown;
+                body.velocity = body.velocity.magnitude * newDir * slowDown;
+            }
+        }
+        else if (onGround)
+        {
+            // no wall, need help getting up slopes
+            if (hitGround.normal.y > 0.6f)
+            {
+                float helpPower = Mathf.Clamp01((1.0f - hitGround.normal.y) * 3.0f);
+                debugFloat = helpPower;
+                body.AddForce(helpPower * Physics.gravity * -3.0f, ForceMode.Impulse);
             }
         }
 
@@ -540,16 +469,6 @@ public class ActorMover : GameBehaviour
         {
             var removePower = 1.0f;
             var removeVelocity = body.velocity;
-
-            /*
-            if (onGround == false)
-            {
-                if (targetVelocity.sqrMagnitude < 0.1f)
-                {
-                    removePower = 0.0f;
-                }
-            }
-            */
 
             removeVelocity.y = 0.0f;
             var removeMag = Mathf.Min(speed, removeVelocity.magnitude) * removePower;
