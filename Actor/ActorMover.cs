@@ -33,7 +33,7 @@ public class ActorMover : GameBehaviour
     public Actions actions;
     public float speed = 12.0f;
     public float jump = 1.0f;
-    public bool canPush = true;
+    public bool canPush = false;
     public bool canSwim = false;
     public bool canJump = false;
     [Range(0.0f, 1.0f)] public float power = 0.75f;
@@ -135,17 +135,17 @@ public class ActorMover : GameBehaviour
 
     void UpdateCollision()
     {
-        var middle = transform.position + body.velocity * 0.01f;
-        var forward = body.velocity.sqrMagnitude > 0.001f ? body.velocity : transform.forward;
+        var forward = actions.move.magnitude * transform.forward * 0.5f;
         forward.y = 0.0f;
-        forward.Normalize();
 
         // ground
         onGround = false;
         var radius = collider.radius;
         var origin = collider.bounds.center;
-        var dist = collider.height * 0.5f + 0.01f;
-        //origin.y += radius;
+        //origin += forward * 0.5f;
+        var dist = collider.height * 0.5f + 0.1f;
+        //var dir = Vector3.down + forward;
+        //dist *= dir.magnitude;
         if (Cast(out hitGround, origin, Vector3.down, dist))
         {
             onGround = hitGround.normal.y > 0.3f;
@@ -213,6 +213,22 @@ public class ActorMover : GameBehaviour
             }
         }
 
+        if (canJump)
+        {
+            float diagRadius = collider.height * 0.7f;
+            if (Physics.Raycast(collider.bounds.center, transform.forward - Vector3.up * 0.9f, out hitDiag, diagRadius, layerCast, QueryTriggerInteraction.Ignore))
+            {
+                if (hitDiag.normal.y > 0.8f && actions.move.sqrMagnitude > 0.1f)
+                {
+                    if (body.velocity.y < 5.0f)
+                    {
+                        body.AddForce(Physics.gravity * -1.5f, ForceMode.Impulse);
+                    }
+                }
+            }
+        }
+
+
         if (canPush) 
         {
             animator.SetBool("Pushing", pushing);
@@ -231,6 +247,12 @@ public class ActorMover : GameBehaviour
         if (contactingWater != null)
         {
             var water = contactingWater;
+            if (water.collider.bounds.Contains(transform.position) == false) 
+            {
+                contactingWater = null;
+                return;
+            }
+
             var lastPos = water.lastPos;
             water.lastPos = water.collider.transform.position;
             var waterMove = water.lastPos - lastPos;
@@ -591,7 +613,7 @@ public class ActorMover : GameBehaviour
         return input;
     }
 
-    void OnTriggerEnter(Collider other)
+    void OnTriggerStay(Collider other)
     {
         if (other.gameObject.layer == layerOneWay)
         {
