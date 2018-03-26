@@ -196,7 +196,9 @@ public class ActorMover : GameBehaviour
         wallOrigin.y = Mathf.Lerp(wallOrigin.y, collider.bounds.min.y, 0.9f);
         wallAvoidDist = collider.radius * 2.6f;
 
-        if (Cast(out hitWall, wallOrigin, transform.forward, wallAvoidDist))
+        wallOrigin.y = collider.bounds.max.y - collider.radius + 0.01f;
+        if (Physics.SphereCast(wallOrigin, collider.radius, transform.forward, out hitWall, wallAvoidDist, layerCast))
+        //if (Cast(out hitWall, wallOrigin, transform.forward, wallAvoidDist))
         {
             onWall = hitWall.rigidbody == null || onGround == false;
             if (onWall)
