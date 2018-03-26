@@ -37,6 +37,7 @@ public class ActorMover : GameBehaviour
     public bool canSwim = false;
     public bool canJump = false;
     [Range(0.0f, 1.0f)] public float power = 0.75f;
+    public bool sphereCasting = false;
 
     public bool onGround { get; private set; }
     public bool onWall { get; protected set; }
@@ -312,15 +313,27 @@ public class ActorMover : GameBehaviour
     {
         var radius = collider.radius;
         dist = dist > 0.0f ? dist : radius;
-        dir.Normalize();
-        var isHit = Physics.SphereCast(origin, collider.radius, dir, out hitInfo, dist - collider.radius, layerCast, QueryTriggerInteraction.Ignore);
-        #if UNITY_EDITOR
-        var color = isHit ? Color.red : Color.white;
-        Debug.DrawLine(origin, isHit ? hitInfo.point : origin + dir * dist, isHit ? Color.red : Color.white);
-        DebugTools.DrawSphere(origin, color, radius);
-        DebugTools.DrawSphere(isHit ? hitInfo.point : origin + dir * dist, color, radius);
-        #endif
-        return isHit;
+
+        if (sphereCasting)
+        {
+            dir.Normalize();
+            var isHit = Physics.SphereCast(origin, collider.radius, dir, out hitInfo, dist - collider.radius, layerCast, QueryTriggerInteraction.Ignore);
+            #if UNITY_EDITOR
+            var color = isHit ? Color.red : Color.white;
+            Debug.DrawLine(origin, isHit ? hitInfo.point : origin + dir * dist, isHit ? Color.red : Color.white);
+            DebugTools.DrawSphere(origin, color, radius);
+            DebugTools.DrawSphere(isHit ? hitInfo.point : origin + dir * dist, color, radius);
+            #endif
+            return isHit;
+        }
+        else
+        {
+            var isHit = Physics.SphereCast(origin, collider.radius, dir, out hitInfo, dist - collider.radius, layerCast, QueryTriggerInteraction.Ignore);
+            #if UNITY_EDITOR
+            Debug.DrawLine(origin, isHit ? hitInfo.point : origin + dir * dist, isHit ? Color.red : Color.white);
+            #endif
+            return isHit;
+        }
     }
 
     public void SetDownTime(float downTime)
@@ -445,7 +458,7 @@ public class ActorMover : GameBehaviour
         else if (onGround)
         {
             // no wall, need help getting up slopes
-            if (hitGround.normal.y > 0.6f)
+            if (hitGround.normal.y > 0.8f)
             {
                 float helpPower = Mathf.Clamp01((1.0f - hitGround.normal.y) * 3.0f);
                 debugFloat = helpPower;
