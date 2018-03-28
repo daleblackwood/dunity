@@ -22,7 +22,7 @@ public class ItemCollectTrigger : MonoBehaviour
         int targetCount = itemKeys.Length;
         foreach (var key in itemKeys)
         {
-            bool isCollected = Saver.main.saveGame.GetBool(key);
+            bool isCollected = trigger.saveState == SaveData.EntitySaveState.Triggered;
             if (isCollected == false)
                 continue;
 

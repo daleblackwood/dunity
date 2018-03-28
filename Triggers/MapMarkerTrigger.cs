@@ -27,13 +27,15 @@ public class MapMarkerTrigger : Triggerable
 
     override protected void OnTrigger()
     {
-        var save = Saver.main.saveGame;
+        saveState = SaveData.EntitySaveState.Triggered;
+        /*
         save.UnsetMarkers();
 
         foreach (var key in entityKeys)
         {
             save.SetMarker(key);
         }
+        */
 
         var first = entityKeys[0];
         //var entity = EntityManager.Get(first);
@@ -42,6 +44,6 @@ public class MapMarkerTrigger : Triggerable
 
     void OnShowMapComplete()
     {
-        Saver.main.Save();
+        //Saver.main.Save();
     }
 }

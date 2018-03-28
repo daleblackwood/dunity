@@ -9,7 +9,9 @@ public class GameStage : GameBehaviour, IStateHost
 
     static public readonly Actor[] NO_ACTORS = new Actor[0];
 
-    public PlayerSpawner[] spawnPoints;
+    [HideInInspector] public string saveKey = null;
+    [HideInInspector] public SaveData.StageData saveData = null;
+
     public bool isPlaying { get; protected set; }
 
     protected StateMachine state;
@@ -227,6 +229,11 @@ public class GameStage : GameBehaviour, IStateHost
     {
         initPositions[t] = t.position;
         initRotations[t] = t.rotation;
+    }
+
+    public virtual void SwitchStage(string name)
+    {
+        Game.main.LoadScene(name);
     }
 
     public Player[] GetPlayers()

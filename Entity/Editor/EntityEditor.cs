@@ -8,10 +8,18 @@ public class EntityEditor : Editor
     {
         var entity = (Entity)target;
 
+        if (entity.saveKey != null)
+        {
+            EditorGUILayout.LabelField("Entity Key: " + entity.saveKey);
+        }
+        else
+        {
+            EditorGUILayout.LabelField("No entity key yet.");
+        }
+
         DrawDefaultInspector();
 
-        GUI.enabled = false;
-        EditorGUILayout.LabelField("Entity Key", entity.GetKey());
-        GUI.enabled = true;
+        //GUI.enabled = false;
+        //GUI.enabled = true;
     }
 }

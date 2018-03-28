@@ -3,15 +3,10 @@ using System.Collections;
 
 public class Entity : GameBehaviour
 {
-    public bool isTargetable = false;
-    string key = null;
+    [HideInInspector] public string saveKey = null;
+    [HideInInspector] public SaveData.EntitySaveState saveState = SaveData.EntitySaveState.None;
 
-    public string GetKey()
-    {
-        if (key == null)
-        {
-            key = (GetType().Name + "-" + name).ToLower();
-        }
-        return key;
-    }
+    public bool isTargetable = false;
+
+    public virtual void TakeHit(Entity other, int damage = 1) {}
 }

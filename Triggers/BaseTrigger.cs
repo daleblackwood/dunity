@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class BaseTrigger : MonoBehaviour 
+public abstract class BaseTrigger : Entity 
 {
     public Triggerable triggerable;
     public bool once = false;

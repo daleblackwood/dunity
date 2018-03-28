@@ -81,6 +81,30 @@ public class Actor : Entity
         this.control = control;
     }
 
+    public override void TakeHit(Entity other, int damage = 1) 
+    {
+        var otherActor = (Actor)other;
+        if (otherActor == null)
+            return;
+        
+        if (faction != otherActor.faction)
+        {
+            health -= damage;
+            if (health <= 0)
+            {
+                health = 0;
+                Kill();
+            }
+        }
+    }
+
+    public virtual void Kill() 
+    {
+        FXer.main.Fire(FXType.SmokePuff, transform.position + Vector3.up);
+        gameObject.SetActive(false);
+        BaseCam.main.Shake(0.3f);
+    }
+
     public void EnableMovement(bool enable)
     {
         if (enable == false)

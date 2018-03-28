@@ -81,6 +81,7 @@ public class ActorMover : GameBehaviour
     int layerCast = 0;
     int layerOneWay = 0;
     int layerWater = 0;
+    int layerActor = 0;
     Vector3 wallOrigin = Vector3.zero;
     float wallAvoidDist = 1.0f;
     bool wasOnGround = false;
@@ -90,7 +91,7 @@ public class ActorMover : GameBehaviour
     Vector3 knock = Vector3.zero;
 
     Collider contactingOneWay = null;
-    WaterContact contactingWater = null;
+    List<WaterContact> contactingWaters = new List<WaterContact>();
 
     // FIXME: Remove debug float
     public float debugFloat = 0.0f;
@@ -98,11 +99,19 @@ public class ActorMover : GameBehaviour
     protected override void OnInit()
     {
         body = GetComponent<Rigidbody>();
-        collider = GetComponent<CapsuleCollider>();
-        animator = GetComponentInChildren<ActorAnimator>();
+        body.constraints = RigidbodyConstraints.FreezeRotation;
+
+
         layerCast = GetCastMask();
         layerOneWay = LayerMask.NameToLayer("OneWay");
         layerWater = LayerMask.NameToLayer("Water");
+        layerActor = LayerMask.NameToLayer("Actor");
+
+        gameObject.layer = layerActor;
+
+        collider = GetComponent<CapsuleCollider>();
+        animator = GetComponentInChildren<ActorAnimator>();
+
         player = GetComponentInParent<Actor>();
     }
 
@@ -129,8 +138,10 @@ public class ActorMover : GameBehaviour
     {
         if (isReady == false) return;
 
+        UpdateWaterCollision();
         UpdateCollision();
         OnMove();
+        UpdateWaterMove();
     }
 
     void UpdateCollision()
@@ -166,8 +177,6 @@ public class ActorMover : GameBehaviour
                 groundY = contactingOneWay.bounds.max.y;
             }
         }
-
-        UpdateWaters();
 
         animator.SetBool("Grounded", onGround || timeSinceGround < 0.1f);
 
@@ -213,9 +222,10 @@ public class ActorMover : GameBehaviour
             }
         }
 
-        if (canJump)
+        // elevation help
+        if (canJump && inWater == false && body.velocity.sqrMagnitude > 0.01f)
         {
-            float diagRadius = collider.height * 0.7f;
+            float diagRadius = collider.height * 0.66f;
             if (Physics.Raycast(collider.bounds.center, transform.forward - Vector3.up * 0.9f, out hitDiag, diagRadius, layerCast, QueryTriggerInteraction.Ignore))
             {
                 if (hitDiag.normal.y > 0.8f && actions.move.sqrMagnitude > 0.1f)
@@ -240,28 +250,24 @@ public class ActorMover : GameBehaviour
         }
     }
 
-    void UpdateWaters()
+    void UpdateWaterCollision()
     {
         // water collisions
         inWater = false;
-        if (contactingWater != null)
+
+        for (int i=contactingWaters.Count-1; i >= 0; i--)
         {
-            var water = contactingWater;
-            if (water.collider.bounds.Contains(transform.position) == false) 
+            var water = contactingWaters[i];
+            if (water == null)
             {
-                contactingWater = null;
-                return;
+                contactingWaters.RemoveAt(i);
+                continue;
             }
 
-            var lastPos = water.lastPos;
-            water.lastPos = water.collider.transform.position;
-            var waterMove = water.lastPos - lastPos;
-            waterMove *= 0.8f;
-            waterMove.y = 0.0f;
-
-            if (waterMove.sqrMagnitude > 0.01f)
+            if (water.collider.bounds.Contains(transform.position) == false) 
             {
-                transform.position += waterMove;
+                contactingWaters.RemoveAt(i);
+                continue;
             }
 
             float waterIn = 0.1f;
@@ -270,27 +276,54 @@ public class ActorMover : GameBehaviour
             origin.y += waterIn + 0.7f;
             var dist = origin.y - collider.bounds.min.y;
             RaycastHit hitInfo;
-            if (Physics.Raycast(origin, Vector3.down, out hitInfo, dist, 1 << layerWater, QueryTriggerInteraction.Collide))
+            if (Physics.Raycast(origin, Vector3.down, out hitInfo, dist, ~(1 << layerActor), QueryTriggerInteraction.Collide))
             {
-                inWater = true;
-                timeLastWater = Time.time;
-                if (canSwim)
+                inWater = hitInfo.collider.gameObject.layer == layerWater;
+                if (inWater)
                 {
-                    if (hitInfo.distance < dist * 0.5f - waterIn)
+                    timeLastWater = Time.time;
+                    if (canSwim)
                     {
-                        body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
+                        if (hitInfo.distance < dist * 0.5f - waterIn)
+                        {
+                            body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
+                        }
                     }
                 }
-            }
-            else
-            {
-                inWater = false;
             }
         }
 
         if (timeSinceWater > 0.1f)
         {
-            contactingWater = null;
+            contactingWaters.Clear();
+        }
+    }
+
+    void UpdateWaterMove()
+    {
+        if (canSwim == false)
+            return;
+
+        foreach (var contactingWater in contactingWaters)
+        {   
+            var lastPos = contactingWater.lastPos;
+            contactingWater.lastPos = contactingWater.collider.transform.position;
+            var waterMove = contactingWater.lastPos - lastPos;
+            //if (waterMove.sqrMagnitude > 0.01f)
+            {
+                var subtractVel = waterMove;
+                subtractVel.y = 0.0f;
+                subtractVel.Normalize();
+                var targetVelocity = MathUtils.VectorSubtractDirection(body.velocity, subtractVel);
+                targetVelocity += waterMove / Time.fixedDeltaTime;
+
+                var currentDirVel = MathUtils.VectorOnLine(body.velocity, waterMove);
+                var targetDirVel = waterMove / Time.fixedDeltaTime * 1.5f;
+                var force = targetDirVel - currentDirVel;
+                force.y = 0.0f;
+
+                body.AddForce(force, ForceMode.Impulse);
+            }
         }
 
         if (canSwim)
@@ -624,8 +657,12 @@ public class ActorMover : GameBehaviour
 
         if (other.gameObject.layer == layerWater)
         {
-            contactingWater = new WaterContact(other);
-            return;
+            foreach (var water in contactingWaters)
+            {
+                if (water.collider == other)
+                    return;
+            }
+            contactingWaters.Add(new WaterContact(other));
         }
     }
 
