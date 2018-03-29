@@ -9,6 +9,8 @@ public abstract class GameMode : GameBehaviour, IStateHost
 
     public StateMachine state { get; private set; }
 
+    bool switching = false;
+
     protected override void OnInit()
     {
         main = this;
@@ -38,4 +40,26 @@ public abstract class GameMode : GameBehaviour, IStateHost
     public virtual void NextGame() {}
 
     public virtual void StopMode() {}
+
+    public virtual void SwitchStage(string stageName)
+    {
+        if (switching)
+            return;
+
+        if (SaveData.main.game == null)
+        {
+            SaveData.main.Load();
+        }
+
+        SaveData.main.game.SetStageData(GameStage.main);
+        SaveData.main.game.SetStage(stageName);
+        SaveData.main.Save();
+        Game.main.LoadScene(stageName, true, SwitchStageComplete);
+    }
+
+    protected virtual void SwitchStageComplete()
+    {
+        //SaveData.main.Load();
+        switching = false;
+    }
 }

@@ -22,11 +22,7 @@ public class CamFollow : BaseCam
         }
 
         float rad = (angle - 90.0f) * Mathf.Deg2Rad;
-        var offset = new Vector3(
-            Mathf.Cos(rad) * distance,
-            distance * heightMulti,
-            Mathf.Sin(rad) * distance
-        );
+        var offset = GetOffset();
 
         if (zoomPower > 0.0f && targets.Length > 1)
         {
@@ -39,5 +35,22 @@ public class CamFollow : BaseCam
         targetLerped = Vector3.Lerp(targetLerped, targetPos, MathUtils.DeltaEase(0.3f));
         transform.position = targetLerped + offset;
         transform.LookAt(transform.position - offset);
+    }
+
+    Vector3 GetOffset()
+    {
+        float rad = (angle - 90.0f) * Mathf.Deg2Rad;
+        return new Vector3(
+            Mathf.Cos(rad) * distance,
+            distance * heightMulti,
+            Mathf.Sin(rad) * distance
+        );
+    }
+
+    public override void SkipTo()
+    {
+        base.SkipTo();
+        targetLerped = targetPos;
+        transform.position = targetPos + GetOffset();
     }
 }

@@ -71,4 +71,37 @@ public static class DebugTools
             lastPos = p;
         }
     }
+
+    static public void DrawCube(Bounds bounds, Color color)
+    {
+        DrawCube(bounds.min, bounds.max, color);
+    }
+
+    static public void DrawCube(Vector3 min, Vector3 max, Color color)
+    {
+        var a = new Vector3(min.x, min.y, min.z);
+        var b = new Vector3(max.x, min.y, min.z);
+        var c = new Vector3(max.x, min.y, max.z);
+        var d = new Vector3(min.x, min.y, max.z);
+
+        var e = new Vector3(min.x, max.y, min.z);
+        var f = new Vector3(max.x, max.y, min.z);
+        var g = new Vector3(max.x, max.y, max.z);
+        var h = new Vector3(min.x, max.y, max.z);
+
+        Debug.DrawLine(a, b, color);
+        Debug.DrawLine(b, c, color);
+        Debug.DrawLine(c, d, color);
+        Debug.DrawLine(d, a, color);
+
+        Debug.DrawLine(e, f, color);
+        Debug.DrawLine(f, g, color);
+        Debug.DrawLine(g, h, color);
+        Debug.DrawLine(h, e, color);
+
+        Debug.DrawLine(a, e, color);
+        Debug.DrawLine(b, f, color);
+        Debug.DrawLine(c, g, color);
+        Debug.DrawLine(d, h, color);
+    }
 }

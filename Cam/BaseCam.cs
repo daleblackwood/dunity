@@ -7,12 +7,16 @@ public abstract class BaseCam : MonoBehaviour
     static public BaseCam main { get; private set; }
 
     public Transform[] targets;
-    public Collider targetConstrainer;
+    public Transform camBoxParent;
+    public float camboxPadding = 0.0f;
     public float fieldOfView = 30.0f;
 
     protected Bounds targetBounds;
     protected Vector3 targetPos;
     protected Camera cam = null;
+
+    Collider camboxConstrainer = null;
+    Bounds[] cambounds = null;
 
     float shakePower = 0.0f;
     float joltPower = 0.0f;
@@ -24,6 +28,22 @@ public abstract class BaseCam : MonoBehaviour
         main = this;
         cam = GetComponent<Camera>();
         movers.Clear();
+
+        if (camBoxParent != null)
+        {
+            cambounds = new Bounds[camBoxParent.childCount];
+            for (int i=0; i<camBoxParent.childCount; i++)
+            {
+                var cambox = camBoxParent.GetChild(i);
+                var size = cambox.lossyScale;
+                size.x = Mathf.Abs(size.x);
+                size.y = Mathf.Abs(size.y);
+                size.z = Mathf.Abs(size.z);
+                var bounds = new Bounds(cambox.position, size);
+                cambounds[i] = bounds;
+                cambox.gameObject.SetActive(false);
+            }
+        }
     }
 
     protected void LateUpdate()
@@ -68,8 +88,13 @@ public abstract class BaseCam : MonoBehaviour
 
     protected virtual void UpdateTargetPos()
     {
+        targetPos = GetTargetPos();
+    }
+
+    public Vector3 GetTargetPos()
+    {
         targetBounds = new Bounds();
-        targetPos = Vector3.zero;
+        var result = Vector3.zero;
         foreach (var target in targets)
         {
             if (target == null)
@@ -85,17 +110,50 @@ public abstract class BaseCam : MonoBehaviour
                 }
             }
             targetBounds.Encapsulate(pos);
-            targetPos += pos;
+            result += pos;
         }
-        targetPos /= Mathf.Max(1.0f, (float)(targets.Length));
-        targetPos = Constrain(targetPos);
+        result /= Mathf.Max(1.0f, (float)(targets.Length));
+        result = Constrain(result);
+        return result;
     }
 
     public Vector3 Constrain(Vector3 position)
     {
-        if (targetConstrainer != null)
+        if (cambounds != null && cambounds.Length > 0)
         {
-            position = targetConstrainer.ClosestPoint(targetPos);
+            var bounds = new Bounds();
+            var isSet = false;
+            float closest2 = float.PositiveInfinity;
+            foreach (var cb in cambounds)
+            {
+                var p = cb.ClosestPoint(targetPos);
+                var dist2 = (targetPos - p).sqrMagnitude;
+                if (isSet && dist2 > closest2)
+                    continue;
+
+                closest2 = dist2;
+                bounds = cb;
+                isSet = true;
+            }
+
+            if (isSet)
+            {
+                var min = bounds.min;
+                var max = bounds.max;
+                var center = bounds.center;
+
+                var pad = camboxPadding;
+                min.x = Mathf.Min(min.x + pad, center.x);
+                min.z = Mathf.Min(min.z + pad, center.z);
+                max.x = Mathf.Max(max.x - pad, center.x);
+                max.z = Mathf.Max(max.z - pad, center.z);
+
+                bounds.min = min;
+                bounds.max = max;
+
+                DebugTools.DrawCube(bounds, Color.blue);
+                position = bounds.ClosestPoint(targetPos);
+            }
         }
         return position;
     }
@@ -124,5 +182,10 @@ public abstract class BaseCam : MonoBehaviour
     public virtual void Jolt(float power = 1.0f)
     {
         joltPower = Mathf.Max(joltPower, power);
+    }
+
+    public virtual void SkipTo()
+    {
+        targetPos = GetTargetPos();
     }
 }

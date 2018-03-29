@@ -53,6 +53,13 @@ public class GameStage : GameBehaviour, IStateHost
 
     protected override void OnReady()
     {
+        if (SaveData.main.game == null)
+        {
+            SaveData.main.Load();
+            SaveData.main.game.SetStage(saveKey);
+        }
+        saveData = SaveData.main.game.GetStageData(this);
+
         Spawn();
 
         ReindexActors();
@@ -229,11 +236,6 @@ public class GameStage : GameBehaviour, IStateHost
     {
         initPositions[t] = t.position;
         initRotations[t] = t.rotation;
-    }
-
-    public virtual void SwitchStage(string name)
-    {
-        Game.main.LoadScene(name);
     }
 
     public Player[] GetPlayers()

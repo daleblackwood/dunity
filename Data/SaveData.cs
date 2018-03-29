@@ -11,10 +11,11 @@ public class SaveData : MonoBehaviour
     [Serializable]
     public class GameData
     {
-        public string lastStage = null;
+        public string currentStage = "";
+        public string previousStage = "";
         public SerializableDictionary<string, StageData> stages = new SerializableDictionary<string, StageData>();
 
-        public StageData GetStage(GameStage stage)
+        public StageData GetStageData(GameStage stage)
         {
             var key = ParseSaveKey(stage.saveKey);
             if (stages.ContainsKey(key) == false)
@@ -25,7 +26,16 @@ public class SaveData : MonoBehaviour
             return stages[key];
         }
 
-        public void SetStage(GameStage stage)
+        public void SetStage(string stageName)
+        {
+            if (stageName != currentStage)
+            {
+                previousStage = currentStage;
+                currentStage = stageName;
+            }
+        }
+
+        public void SetStageData(GameStage stage)
         {
             var key = ParseSaveKey(stage.saveKey);
             stages[key] = stage.saveData;
@@ -34,7 +44,8 @@ public class SaveData : MonoBehaviour
         public JSONObject Serialise()
         {
             var json = new JSONObject();
-            json["lastStage"] = new JSONString(lastStage);
+            json["currentStage"] = new JSONString(currentStage);
+            json["previousStage"] = new JSONString(previousStage);
 
             var stageNodes = json["stages"] = new JSONObject();
             foreach (var pair in stages)
@@ -47,7 +58,8 @@ public class SaveData : MonoBehaviour
         public void Deserialise(JSONObject json)
         {
             stages.Clear();
-            lastStage = json["lastStage"].Value;
+            currentStage = json["currentStage"].Value;
+            previousStage = json["previousStage"].Value;
 
             var stageNodes = json["stages"].AsObject;
             if (stageNodes != null)
@@ -65,6 +77,8 @@ public class SaveData : MonoBehaviour
     public class StageData
     {
         public SerializableDictionary<string, EntitySaveState> entities = new SerializableDictionary<string, EntitySaveState>();
+
+        public string lastDoor = "";
 
         public EntitySaveState GetEntity(Entity entity)
         {
@@ -84,6 +98,7 @@ public class SaveData : MonoBehaviour
         public JSONObject Serialise()
         {
             var json = new JSONObject();
+            json["lastDoor"] = lastDoor;
             var entityNodes = json["entities"] = new JSONObject();
             foreach (var pair in entities)
             {
@@ -95,6 +110,7 @@ public class SaveData : MonoBehaviour
         public void Deserialise(JSONObject json)
         {
             entities.Clear();
+            lastDoor = json["lastDoor"].Value;
             var entityNodes = json["entities"].AsObject;
             foreach (KeyValuePair<string, JSONNode> node in entityNodes)
             {
@@ -223,10 +239,22 @@ public class SaveData : MonoBehaviour
     public GameData game { get; private set; }
     public int slot { get; private set; }
 
-    public void Load(int loadSlot)
+    void Awake()
     {
-        slot = loadSlot;
+        main = this;
+    }
+
+    public void Load(int loadSlot = -1)
+    {
+        if (loadSlot != -1)
+        {
+            slot = loadSlot;
+        }
         game = LoadGameData(slot);
+        if (game == null)
+        {
+            game = new GameData();  
+        }
     }
 
     public void Save()

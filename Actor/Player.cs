@@ -4,7 +4,7 @@ using System.Collections;
 public class Player : GameBehaviour
 {
     public int index = -1;
-    int lastIndex = -1;
+    int lastIndex = -2;
     public Actor actor { get; private set; }
 
     override protected void OnInit()
