@@ -126,8 +126,8 @@ public abstract class BaseCam : MonoBehaviour
             float closest2 = float.PositiveInfinity;
             foreach (var cb in cambounds)
             {
-                var p = cb.ClosestPoint(targetPos);
-                var dist2 = (targetPos - p).sqrMagnitude;
+                var p = cb.ClosestPoint(position);
+                var dist2 = (position - p).sqrMagnitude;
                 if (isSet && dist2 > closest2)
                     continue;
 
@@ -152,7 +152,7 @@ public abstract class BaseCam : MonoBehaviour
                 bounds.max = max;
 
                 DebugTools.DrawCube(bounds, Color.blue);
-                position = bounds.ClosestPoint(targetPos);
+                position = bounds.ClosestPoint(position);
             }
         }
         return position;
