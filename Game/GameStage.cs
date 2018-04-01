@@ -276,47 +276,4 @@ public class GameStage : GameBehaviour, IStateHost
 
         return cache;
     }
-
-    public Actor GetNearestFriend(Actor actor)
-    {
-        Actor result = null;
-        var friends = GetFriends(actor.faction);
-        if (friends.Length > 1)
-        {
-            float nearDist2 = float.PositiveInfinity;
-            foreach (var friend in friends)
-            {
-                if (friend == actor)
-                    continue;
-
-                float dist2 = (friend.mover.transform.position - actor.mover.transform.position).sqrMagnitude;
-                if (dist2 > nearDist2)
-                    continue;
-
-                result = friend;
-                nearDist2 = dist2;
-            }
-        }
-        return result;
-    }
-
-    public Actor GetNearestFoe(Actor actor)
-    {
-        Actor result = null;
-        var foes = GetFoes(actor.faction);
-        if (foes.Length > 0)
-        {
-            float nearDist2 = float.PositiveInfinity;
-            foreach (var foe in foes)
-            {
-                float dist2 = (foe.mover.transform.position - actor.mover.transform.position).sqrMagnitude;
-                if (dist2 > nearDist2)
-                    continue;
-
-                result = foe;
-                nearDist2 = dist2;
-            }
-        }
-        return result;
-    }
 }

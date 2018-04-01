@@ -311,6 +311,7 @@ public class ActorMover : GameBehaviour
             var waterMove = contactingWater.lastPos - lastPos;
             //if (waterMove.sqrMagnitude > 0.01f)
             {
+                /*
                 var subtractVel = waterMove;
                 subtractVel.y = 0.0f;
                 subtractVel.Normalize();
@@ -323,6 +324,9 @@ public class ActorMover : GameBehaviour
                 force.y = 0.0f;
 
                 body.AddForce(force, ForceMode.Impulse);
+                */
+
+                transform.position += waterMove;
             }
         }
 
@@ -583,6 +587,7 @@ public class ActorMover : GameBehaviour
         
         float jumpForce = jump * 100.0f * power;
         body.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        body.position += Vector3.up * 0.1f;
         timeLastJump = Time.time;
         jumping = true;
         onGround = false;
@@ -626,7 +631,10 @@ public class ActorMover : GameBehaviour
 
     void LateUpdate()
     {
-        transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, MathUtils.DeltaEase(0.2f)); 
+        if (timeSinceMove < 0.1f)
+        {
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, MathUtils.DeltaEase(0.2f)); 
+        }
         var vel = body.velocity;
         vel.y = 0.0f;
         float animSpeed = vel.magnitude * 0.18f;
