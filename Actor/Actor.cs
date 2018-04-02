@@ -4,14 +4,6 @@ using UnityEngine;
 
 public class Actor : Entity 
 {
-    public enum ContextAction
-    {
-        None    = 0,
-        Talk    = 1,
-        Attack  = 2,
-        Stay    = 4
-    }
-
     static int actorCount = 0;
 
     public Faction faction = null;
@@ -24,6 +16,8 @@ public class Actor : Entity
 
     public int maxHealth = 3;
     public int health = 3;
+    public float maxTargetDistance = 10.0f;
+    public float maxContextDistance = 5.0f;
 
     public Player player { get; private set; }
     public int playerIndex { get { return player == null ? -1 : player.index; } }
@@ -33,11 +27,9 @@ public class Actor : Entity
 
     int index = 0;
     int nextNearCheckFrame = 0;
-    Actor soughtFriend = null;
-    Actor soughtFoe = null;
-    Actor soughtActor = null;
-    public Actor target { get; private set; }
-    public ContextAction[] contexActions = null;
+    public Actor targetFriend { get; private set; }
+    public Actor targetFoe { get; private set; }
+    public Actor targetActor { get; private set; }
 
     protected override void OnInit()
     {
@@ -101,32 +93,6 @@ public class Actor : Entity
                 mover.UpdateActions(actions);
             }
         }
-
-        if (head != null)
-        {
-            if (head.target != target)
-            {
-                var contextActionList = new List<ContextAction>();
-                if (head.target != null)
-                {
-                    if (head.target.faction == faction)
-                    {
-                        var talker = head.target.GetComponent<NPCTalker>();
-                        if (talker != null)
-                        {
-                            contextActionList.Add(ContextAction.Talk);
-                        }
-                    }
-                    else
-                    {
-                        contextActionList.Add(ContextAction.Attack);
-                    }
-                }
-
-                contexActions = contextActionList.ToArray();
-                target = head.target;
-            }
-        }
     }
 
     public void SetControl(BaseControl control)
@@ -170,19 +136,19 @@ public class Actor : Entity
     public Actor SeekActor()
     {
         UpdateSeek();
-        return soughtActor;
+        return targetActor;
     }
 
     public Actor SeekFriend()
     {
         UpdateSeek();
-        return soughtFriend;
+        return targetFriend;
     }
 
     public Actor SeekFoe()
     {
         UpdateSeek();
-        return soughtFoe;
+        return targetFoe;
     }
 
     void UpdateSeek()
@@ -190,13 +156,15 @@ public class Actor : Entity
         if (nextNearCheckFrame > Time.frameCount)
             return;
 
-        float nearFriendSq = float.PositiveInfinity;
-        float nearFoeSq = float.PositiveInfinity;
-        float nearSq = float.PositiveInfinity;
+        float maxSq = maxTargetDistance * maxTargetDistance;
 
-        soughtFriend = null;
-        soughtFoe = null;
-        soughtActor = null;
+        float nearFriendSq = maxSq;
+        float nearFoeSq = maxSq;
+        float nearSq = maxSq;
+
+        targetFriend = null;
+        targetFoe = null;
+        targetActor = null;
 
         var actors = GameStage.main.GetActors();
         foreach (var a in actors)
@@ -217,19 +185,19 @@ public class Actor : Entity
 
             if (a.faction == faction && dist2 < nearFriendSq)
             {
-                soughtFriend = a;
+                targetFriend = a;
                 nearFriendSq = dist2;
             }
 
             if (a.faction != faction && dist2 < nearFoeSq)
             {
-                soughtFoe = a;
+                targetFoe = a;
                 nearFoeSq = dist2;
             }
 
             if (dist2 < nearSq)
             {
-                soughtActor = a;
+                targetActor = a;
                 nearSq = dist2;
             }
         }

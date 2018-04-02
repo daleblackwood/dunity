@@ -21,9 +21,9 @@ public class AttackActioner : BaseActioner
 
     protected override void OnActivate()
     {
-        if (actor != null && actor.target != null)
+        if (actor != null && actor.targetActor != null)
         {
-            if (actor.target.faction == actor.faction)
+            if (actor.targetActor.faction == actor.faction)
             {
                 return;
             }
