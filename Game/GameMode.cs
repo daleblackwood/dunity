@@ -5,9 +5,15 @@ using UnityEngine.SceneManagement;
 
 public abstract class GameMode : GameBehaviour, IStateHost
 {
-    new static public GameMode main { get; private set; }
-
+    static public GameMode main { get; private set; }
+  
     public StateMachine state { get; private set; }
+
+    public UIScreen playerDiscoveryScreen;
+    public UIScreen playScreen;
+    public UIScreen loadScreen;
+
+    public string firstScene = null;
 
     bool switching = false;
 
@@ -24,7 +30,7 @@ public abstract class GameMode : GameBehaviour, IStateHost
 
     protected IEnumerator CoDiscoverPlayers()
     {
-        UIManager.main.ToPickSides();
+        UIManager.main.SwitchTo(playerDiscoveryScreen);
 
         yield return new WaitForSeconds(0.5f);
 

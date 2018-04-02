@@ -70,7 +70,8 @@ public class GameStage : GameBehaviour, IStateHost
 
     public virtual void StartStage()
     {
-        UIManager.main.ToPlay();
+        var playScreen = GameMode.main.playScreen;
+        UIManager.main.SwitchTo(playScreen);
     }
 
     public virtual void RestartStage()

@@ -301,9 +301,6 @@ public class ActorMover : GameBehaviour
 
     void UpdateWaterMove()
     {
-        if (canSwim == false)
-            return;
-
         foreach (var contactingWater in contactingWaters)
         {   
             var lastPos = contactingWater.lastPos;

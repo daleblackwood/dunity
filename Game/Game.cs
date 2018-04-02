@@ -32,6 +32,22 @@ public class Game : MonoBehaviour
     static public bool isPaused { get; private set; }
     static public bool isDevelopment { get; private set; }
 
+    static public string[] GetSceneNames()
+    {
+        var list = new List<string>();
+
+        for (int i=0, lim=SceneManager.sceneCountInBuildSettings; i<lim; i++)
+        {
+            var sn = SceneUtility.GetScenePathByBuildIndex(i);
+            sn = sn.Replace('\\', '/');
+            sn = sn.Substring(sn.LastIndexOf('/') + 1);
+            sn = sn.Substring(0, sn.LastIndexOf('.'));
+            list.Add(sn);
+        }
+
+        return list.ToArray();
+    }
+
     void FireWhenReady()
     {
         if (isReady == false)
@@ -54,15 +70,28 @@ public class Game : MonoBehaviour
     System.Action onNextLoadComplete = null;
 
     GameMode defaultMode = null;
+    Dictionary<string, GameMode> modes = new Dictionary<string, GameMode>();
 
     void Awake()
     {
         main = this;
         isReady = true;
 
-        GetSceneNames();
+        sceneNames = GetSceneNames();
 
-        defaultMode = GetComponentInChildren<GameMode>();
+        var allModes = GetComponentsInChildren<GameMode>();
+        if (allModes.Length < 1)
+        {
+            Debug.LogError("No game modes.");
+        }
+        else
+        {
+            foreach (var mode in allModes)
+            {
+                modes[mode.GetType().Name] = mode;
+            }
+            defaultMode = allModes[0];
+        }
 
         if (string.IsNullOrEmpty(sceneName))
         {
@@ -79,22 +108,6 @@ public class Game : MonoBehaviour
         }
 
         DontDestroyOnLoad(gameObject);
-    }
-
-    void GetSceneNames()
-    {
-        var list = new List<string>();
-
-        for (int i=0, lim=SceneManager.sceneCountInBuildSettings; i<lim; i++)
-        {
-            var sn = SceneUtility.GetScenePathByBuildIndex(i);
-            sn = sn.Replace('\\', '/');
-            sn = sn.Substring(sn.LastIndexOf('/') + 1);
-            sn = sn.Substring(0, sn.LastIndexOf('.'));
-            list.Add(sn);
-        }
-
-        sceneNames = list.ToArray();
     }
 
     void Start()
@@ -184,7 +197,8 @@ public class Game : MonoBehaviour
 
         if (showLoad)
         {
-            UIManager.main.ToLoad();
+            var loadScreen = GameMode.main.loadScreen;
+            UIManager.main.SwitchTo(loadScreen);
         }
 
         yield return new WaitForSeconds(0.5f);
@@ -210,23 +224,31 @@ public class Game : MonoBehaviour
 
     public void SetGameMode<T>() where T : GameMode
     {
-        var modeGo = new GameObject("GameMode_" + typeof(T).Name);
-        modeGo.transform.SetParent(transform);
-        var newGameMode = modeGo.AddComponent<T>();
-
-        SetGameMode(newGameMode);
-    }
-
-    public void SetGameMode(GameMode newGameMode)
-    {
-        if (gameMode != null)
+        var modeKey = typeof(T).Name;
+        if (modes.ContainsKey(modeKey) == false)
         {
-            gameMode.StopMode();
-            gameMode.name += "_destroy";
-            GameObject.Destroy(gameMode.gameObject);
+            throw new UnityException("Can't switch to mode " + modeKey);
         }
 
-        gameMode = newGameMode;
+        SetGameMode(modes[modeKey]);
+    }
+
+    void SetGameMode(GameMode newMode)
+    {
+        gameMode = newMode;
+
+        foreach (var mode in modes)
+        {
+            if (mode.Value == newMode)
+                continue;
+
+            if (mode.Value.gameObject.activeSelf)
+            {
+                mode.Value.gameObject.SetActive(false);
+            }
+        }
+
+        gameMode.gameObject.SetActive(true);
         gameMode.StartMode();
     }
         

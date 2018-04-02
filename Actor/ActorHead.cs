@@ -29,6 +29,7 @@ public class ActorHead : MonoBehaviour
     {
         Vector3 angles = neck.eulerAngles;
         bool wasTargeting = target != null;
+        var lookDir = actor.transform.forward;
 
         if (target == null)
         {
@@ -55,24 +56,17 @@ public class ActorHead : MonoBehaviour
                 }
                 else
                 {
-                    var angleUp = Mathf.Atan2(-dif.z, dif.x) * Mathf.Rad2Deg + 180.0f;
-                    angles.y = angleUp;
+                    lookDir = dif.normalized;
                 }
             }
         }
 
-        if (target != null)
-        {
-            var rotTo = Quaternion.Euler(angles);
-            var rotDifTo = Quaternion.Inverse(neck.rotation) * rotTo;
-            rotDif = Quaternion.RotateTowards(rotDif, rotDifTo, Time.deltaTime * 600.0f);
+        var angleUp = Mathf.Atan2(-lookDir.z, lookDir.x) * Mathf.Rad2Deg + 180.0f;
+        angles.y = angleUp;
 
-            neck.rotation *= rotDif;
-        }
-        else
-        {
-            rotDif = Quaternion.identity;
-            neck.localRotation = Quaternion.Lerp(neck.localRotation, neckInitRot, MathUtils.DeltaEase(0.01f));
-        }
+        var rotTo = Quaternion.Euler(angles);
+        var rotDifTo = Quaternion.Inverse(neck.rotation) * rotTo;
+        rotDif = Quaternion.RotateTowards(rotDif, rotDifTo, Time.deltaTime * 600.0f);
+        neck.rotation *= rotDif;
     }
 }
