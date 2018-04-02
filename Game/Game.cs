@@ -69,7 +69,7 @@ public class Game : MonoBehaviour
     public string[] sceneNames = null;
     System.Action onNextLoadComplete = null;
 
-    GameMode defaultMode = null;
+    public GameMode defaultMode = null;
     Dictionary<string, GameMode> modes = new Dictionary<string, GameMode>();
 
     void Awake()

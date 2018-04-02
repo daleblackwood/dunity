@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class ActorHead : MonoBehaviour 
 {
+    public Actor target { get; private set; }
     Actor actor = null;
     Quaternion initRot;
     Transform neck;
     Quaternion neckInitRot;
-    Actor target = null;
     Quaternion rotDif = Quaternion.identity;
 
     void Awake()

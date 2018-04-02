@@ -4,6 +4,14 @@ using UnityEngine;
 
 public class Actor : Entity 
 {
+    public enum ContextAction
+    {
+        None    = 0,
+        Talk    = 1,
+        Attack  = 2,
+        Stay    = 4
+    }
+
     static int actorCount = 0;
 
     public Faction faction = null;
@@ -12,6 +20,7 @@ public class Actor : Entity
 
     public ActorMover mover { get; private set; }
     public ActorAnimator animator { get; private set; }
+    public ActorHead head { get; private set; }
 
     public int maxHealth = 3;
     public int health = 3;
@@ -27,6 +36,8 @@ public class Actor : Entity
     Actor soughtFriend = null;
     Actor soughtFoe = null;
     Actor soughtActor = null;
+    public Actor target { get; private set; }
+    public ContextAction[] contexActions = null;
 
     protected override void OnInit()
     {
@@ -35,6 +46,7 @@ public class Actor : Entity
         mover = GetComponentInChildren<ActorMover>();
         control = GetComponent<BaseControl>();
         player = GetComponentInParent<Player>();
+        head = GetComponentInChildren<ActorHead>();
         EnableMovement(false);
         base.OnInit();
     }
@@ -75,7 +87,9 @@ public class Actor : Entity
 
     void Update()
     {
-        if (isReady == false) return;
+        if (isReady == false) 
+            return;
+        
         if (movementEnabled)
         {
             if (control != null)
@@ -85,6 +99,32 @@ public class Actor : Entity
             if (mover != null)
             {
                 mover.UpdateActions(actions);
+            }
+        }
+
+        if (head != null)
+        {
+            if (head.target != target)
+            {
+                var contextActionList = new List<ContextAction>();
+                if (head.target != null)
+                {
+                    if (head.target.faction == faction)
+                    {
+                        var talker = head.target.GetComponent<NPCTalker>();
+                        if (talker != null)
+                        {
+                            contextActionList.Add(ContextAction.Talk);
+                        }
+                    }
+                    else
+                    {
+                        contextActionList.Add(ContextAction.Attack);
+                    }
+                }
+
+                contexActions = contextActionList.ToArray();
+                target = head.target;
             }
         }
     }

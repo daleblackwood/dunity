@@ -5,7 +5,7 @@ using UnityEditor;
 
 public static class EditorTools 
 {
-    [MenuItem("Tools/Create New Parent")]
+    [MenuItem("GameObject/Create New Parent", false, 1)]
     static void CreateParent()
     {
         if (Selection.gameObjects.Length < 1)
@@ -32,7 +32,7 @@ public static class EditorTools
         Selection.activeObject = go;
     }
 
-    [MenuItem("Tools/Add To Parent")]
+    [MenuItem("GameObject/Add To Parent", false, 1)]
     static void AddToParent()
     {
         if (Selection.gameObjects.Length < 2)
@@ -48,6 +48,23 @@ public static class EditorTools
         }
 
         AddToParent(Selection.gameObjects[0].transform, children);
+    }
+
+    [MenuItem("GameObject/Create New Adjacent", false, 1)]
+    static void CreateAdjacent()
+    {
+        if (Selection.gameObjects.Length < 1)
+        {
+            Debug.LogError("Nothing for adjacent.");
+            return;
+        }
+
+        var selected = Selection.gameObjects[0];
+        var go = new GameObject();
+        go.transform.SetParent(selected.transform.parent, false);
+        go.transform.position = selected.transform.position;
+        go.transform.SetSiblingIndex(selected.transform.GetSiblingIndex() + 1);
+        Selection.activeObject = go;
     }
 
     static void AddToParent(Transform parent, Transform[] newChildren)

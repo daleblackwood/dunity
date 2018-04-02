@@ -9,11 +9,13 @@ public abstract class BaseActioner : MonoBehaviour
     public float coolDownTime = 0.1f;
     protected float lastActivateTime = 0.0f;
     protected Actions lastActions;
+    protected Actor actor = null;
     protected ActorMover mover = null;
 
     protected virtual void OnEnable()
     {
         activated = false;
+        actor = GetComponent<Actor>();
         mover = GetComponent<ActorMover>();
     }
 

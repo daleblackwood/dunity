@@ -21,6 +21,18 @@ public class AttackActioner : BaseActioner
 
     protected override void OnActivate()
     {
+        if (actor != null && actor.target != null)
+        {
+            if (actor.target.faction == actor.faction)
+            {
+                return;
+            }
+        }
+        Attack();
+    }
+
+    void Attack()
+    {
         attackCount++;
         var trigger = attackCount % 2 == 0 ? "AttackFore" : "AttackBack";
         mover.animator.SetTrigger(trigger);
