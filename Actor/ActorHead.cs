@@ -31,34 +31,13 @@ public class ActorHead : MonoBehaviour
         bool wasTargeting = target != null;
         var lookDir = actor.transform.forward;
 
-        if (target == null)
-        {
-            target = actor.SeekActor();
-        }
+        target = actor.SeekContextActor();
 
         if (target != null)
         {
-            var targetT = target.transform;
-
-            var dif = targetT.position - transform.position;
+            var dif = target.transform.position - transform.position;
             dif.y = 0.0f;
-            if (dif.sqrMagnitude > 25.0f)
-            {
-                target = null;
-            }
-            else
-            {
-                var dot = Vector3.Dot(actor.transform.forward, dif.normalized);
-                float dotThresh = wasTargeting ? -0.6f : -0.2f;
-                if (dot < dotThresh)
-                {
-                    target = null;
-                }
-                else
-                {
-                    lookDir = dif.normalized;
-                }
-            }
+            lookDir = dif.normalized;
         }
 
         var angleUp = Mathf.Atan2(-lookDir.z, lookDir.x) * Mathf.Rad2Deg + 180.0f;

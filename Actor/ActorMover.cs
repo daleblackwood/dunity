@@ -126,6 +126,7 @@ public class ActorMover : GameBehaviour
     {
         base.OnDisable();
         CancelMomentum();
+        animator.Reset();
     }
 
     public override void Reset()

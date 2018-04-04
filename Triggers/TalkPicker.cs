@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TalkPicker : TalkTriggerBase
+public class TalkPicker : TalkTrigger
 {
     TalkScript selected = null;
 

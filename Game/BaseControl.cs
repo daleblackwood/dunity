@@ -26,7 +26,7 @@ public abstract class BaseControl : MonoBehaviour
 
     public virtual void Reset() {}
 
-    public void Update()
+    public void UpdateControl()
     {
         if (Time.frameCount == lastUpdateFrame)
             return;

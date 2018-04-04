@@ -176,7 +176,7 @@ public class SequenceManager : MonoBehaviour
         //Game.Instance.ui.ToSign(message);
 
         float msgTime = GetDisplayTime(message);
-        yield return StartCoroutine(CoTimeOrPress(msgTime));
+        yield return StartCoroutine(CoWaitForPress(msgTime));
 
         MusicPlayer.main.Resume();
 
@@ -292,9 +292,10 @@ public class SequenceManager : MonoBehaviour
         Finish();
     }
 
-    public void Talk(TalkConversation conversation, System.Action onComplete = null)
+    public void Talk(Conversation conversation, System.Action onComplete = null)
     {
         conversation.isTalking = true;
+        GameStage.main.EnableMovement(false);
 
         var sequences = new List<SequenceEntry>();
 
@@ -315,7 +316,7 @@ public class SequenceManager : MonoBehaviour
         return msgTime;
     }
 
-    IEnumerator WaitForConversation(TalkConversation conversation, SequenceEntry[] sequences, System.Action onComplete = null)
+    IEnumerator WaitForConversation(Conversation conversation, SequenceEntry[] sequences, System.Action onComplete = null)
     {
         yield return StartCoroutine(WaitForSequences(sequences));
 
@@ -323,6 +324,12 @@ public class SequenceManager : MonoBehaviour
 
         //conversation.actorA.PickMover();
         //conversation.actorB.PickMover();
+
+
+        GameStage.main.EnableMovement(true);
+
+        var talkScreen = UIManager.main.GetScreen<UIScreenMessage>();
+        talkScreen.speech.Hide();
 
         Finish(onComplete);
     }
@@ -348,8 +355,29 @@ public class SequenceManager : MonoBehaviour
         Finish(onComplete);
     }
 
-    IEnumerator SequenceTalkNode(TalkConversation conversation, TalkNode talkNode)
+    IEnumerator SequenceTalkNode(Conversation conversation, TalkNode talkNode)
     {
+        Actor talkActor = talkNode.actor;
+        bool left = false;
+
+        switch (talkNode.talker)
+        {
+            case Talker.Host:
+                talkActor = conversation.host;
+                left = true;
+                break;
+            
+            case Talker.Player:
+                talkActor = AdventureStage.main.girl.actor;
+                break;
+
+            case Talker.Sidekick:
+                talkActor = AdventureStage.main.cat.actor;
+                break;
+        }
+
+        /*
+            
         var dif = conversation.actorA.transform.position - conversation.actorB.transform.position;
         dif = dif.normalized * 5.0f;
         conversation.actorA.transform.position = conversation.actorB.transform.position + dif;
@@ -360,11 +388,11 @@ public class SequenceManager : MonoBehaviour
             talker = conversation.actorA;
         }
 
-        Debug.Log("Sequence: Talk: " + talker.name + ": " + talkNode.speech);
+
+        Debug.Log("Sequence: Talk: " + talkActor.name + ": " + talkNode.speech);
 
         //Game.Instance.ui.ToSign(talkNode.speech);
 
-        /*
         var talkerMover = talker.SetMover<TalkMover>();
         if (talkerMover != null)
         {
@@ -396,32 +424,42 @@ public class SequenceManager : MonoBehaviour
 
         Game.Instance.cam.Talk(talker, talker == conversation.actorA);
 
-        float msgTime = GetDisplayTime(talkNode.speech);
-        yield return StartCoroutine(CoTimeOrPress(msgTime));
+        */
 
-        if (conversantsTalking == 0)
-        {
-            talker.PickMover(); 
-        }
+        var talkScreen = UIManager.main.GetScreen<UIScreenMessage>();
+        talkScreen.speech.Speek(talkActor, talkNode.speech, left);
+
+        float msgTime = GetDisplayTime(talkNode.speech);
+        yield return StartCoroutine(CoWaitForPress(msgTime));
 
         if (talkNode.trigger != null)
         {
             talkNode.trigger.Trigger(true);
         }
-        */
 
         yield return null;
     }
 
-    IEnumerator CoTimeOrPress(float time, float minTime = 0.2f)
+    IEnumerator CoWaitForPress(float time, float minTime = 0.2f)
     {
         time -= minTime;
         yield return new WaitForSecondsRealtime(minTime);
 
-        while (Input.anyKeyDown == false && time > 0.0f)
+        while (IsActionPressed() == false)// && time > 0.0f)
         {
             time -= Time.unscaledDeltaTime;
             yield return null;
         }
+    }
+
+    bool IsActionPressed()
+    {
+        var players = GameStage.main.GetPlayers();
+        foreach (var player in players)
+        {
+            if (player.actor.actions.primary || player.actor.actions.secondary)
+                return true;
+        }
+        return false;
     }
 }

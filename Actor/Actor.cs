@@ -16,20 +16,21 @@ public class Actor : Entity
 
     public int maxHealth = 3;
     public int health = 3;
-    public float maxTargetDistance = 10.0f;
-    public float maxContextDistance = 5.0f;
+    public float distanceTargetMax = 10.0f;
+    public float distanceContextMax = 5.0f;
 
     public Player player { get; private set; }
     public int playerIndex { get { return player == null ? -1 : player.index; } }
 
     protected BaseControl control = null;
-    bool movementEnabled = false;
+    public bool isMovementEnabled { get; private set; }
 
     int index = 0;
     int nextNearCheckFrame = 0;
     public Actor targetFriend { get; private set; }
     public Actor targetFoe { get; private set; }
     public Actor targetActor { get; private set; }
+    public Actor targetContext { get; private set; }
 
     protected override void OnInit()
     {
@@ -81,13 +82,13 @@ public class Actor : Entity
     {
         if (isReady == false) 
             return;
-        
-        if (movementEnabled)
+
+        if (control != null)
         {
-            if (control != null)
-            {
-                control.Update();
-            }
+            control.UpdateControl();
+        }
+        if (isMovementEnabled)
+        {
             if (mover != null)
             {
                 mover.UpdateActions(actions);
@@ -130,7 +131,11 @@ public class Actor : Entity
         {
             actions.Reset();
         }
-        movementEnabled = enable;
+        if (mover != null)
+        {
+            mover.enabled = enable;
+        }
+        isMovementEnabled = enable;
     }
 
     public Actor SeekActor()
@@ -151,12 +156,18 @@ public class Actor : Entity
         return targetFoe;
     }
 
+    public Actor SeekContextActor()
+    {
+        UpdateSeek();
+        return targetContext;
+    }
+
     void UpdateSeek()
     {
         if (nextNearCheckFrame > Time.frameCount)
             return;
 
-        float maxSq = maxTargetDistance * maxTargetDistance;
+        float maxSq = distanceTargetMax * distanceTargetMax;
 
         float nearFriendSq = maxSq;
         float nearFoeSq = maxSq;
@@ -200,6 +211,29 @@ public class Actor : Entity
                 targetActor = a;
                 nearSq = dist2;
             }
+        }
+
+        if (targetContext != null)
+        {
+            var dif = targetContext.transform.position - transform.position;
+            var offDist = distanceContextMax + 1.0f;
+            if (dif.sqrMagnitude > offDist * offDist)
+            {
+                targetContext = null;
+            }
+            else
+            {
+                var dot = Vector3.Dot(transform.forward, dif.normalized);
+                if (dot < -0.5f)
+                {
+                    targetContext = null;
+                }
+            }
+        }
+
+        if (targetContext == null && targetActor != null && nearSq < distanceContextMax * distanceContextMax)
+        {
+            targetContext = targetActor;
         }
 
         nextNearCheckFrame = Time.frameCount + 1;

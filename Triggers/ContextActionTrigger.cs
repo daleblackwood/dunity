@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum TriggerAction
+public enum ContextAction
 {
     None,
 
@@ -13,13 +13,13 @@ public enum TriggerAction
     Read
 }
 
-public class ActionTrigger : BaseTrigger 
+public class ContextActionTrigger : BaseTrigger 
 {
-    public TriggerAction action = TriggerAction.Use;
+    public ContextAction action = ContextAction.Use;
 
     public bool IsStrike()
     {
-        return action >= TriggerAction.Use && action <= TriggerAction.Read;
+        return action >= ContextAction.Use && action <= ContextAction.Read;
     }
 
     public override void Trigger()

@@ -13,6 +13,7 @@ public class GameStage : GameBehaviour, IStateHost
     [HideInInspector] public SaveData.StageData saveData = null;
 
     public bool isPlaying { get; protected set; }
+    public bool isMovementEnabled = false;
 
     protected StateMachine state;
 
@@ -63,6 +64,7 @@ public class GameStage : GameBehaviour, IStateHost
         Spawn();
 
         ReindexActors();
+        EnableMovement(true);
 
         base.OnReady();
         StartStage();
@@ -132,7 +134,7 @@ public class GameStage : GameBehaviour, IStateHost
         {
             var actor = actors[i];
 
-            if (actor == null || actor.isActiveAndEnabled == false)
+            if (actor == null)
             {
                 actors.RemoveAt(i);
                 continue;
@@ -207,6 +209,7 @@ public class GameStage : GameBehaviour, IStateHost
             isPlaying = false;
             EnablePlayers(false);
         }
+        EnableMovement(enable);
     }
 
     public void EnablePlayers(bool enable)
@@ -237,6 +240,15 @@ public class GameStage : GameBehaviour, IStateHost
     {
         initPositions[t] = t.position;
         initRotations[t] = t.rotation;
+    }
+
+    public void EnableMovement(bool enable)
+    {
+        foreach (var actor in actors)
+        {
+            actor.EnableMovement(enable);
+        }
+        isMovementEnabled = enable;
     }
 
     public Player[] GetPlayers()

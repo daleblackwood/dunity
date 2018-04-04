@@ -6,7 +6,7 @@ public abstract class Triggerable : Entity
 {
     public bool isTriggered { get; private set; }
     public bool doReveal = false;
-    public bool oneTime = true;
+    public bool oneTime { get; private set; }
 
     public bool hasTriggered { get; private set; }
 
