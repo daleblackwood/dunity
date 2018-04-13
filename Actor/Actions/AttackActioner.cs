@@ -23,7 +23,7 @@ public class AttackActioner : BaseActioner
     {
         if (actor != null && actor.targetActor != null)
         {
-            if (actor.targetActor.faction != actor.faction)
+            if (actor.targetActor.faction != null && actor.targetActor.faction != actor.faction)
             {
                 Attack();
                 return;

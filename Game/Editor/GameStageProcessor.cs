@@ -54,27 +54,23 @@ public class GameStageProcessor : UnityEditor.AssetModificationProcessor
         stage.saveKey = scene.name;
         Debug.Log("Writing stage " + stage.saveKey + "...");
 
-        stage.saveData = new SaveData.StageData();
+        var writtenKeys = new Dictionary<string, bool>();
+
         foreach (var entity in entities)
         {
             int index = 0;
             do 
             {
-                entity.saveKey = SaveData.ParseSaveKey(entity.name);
+                entity.saveKey = EvalUtils.ParseToken(entity.name);
                 if (index++ > 0)
                 {
                     entity.saveKey += "_" + index.ToString();
                 }
             }
-            while (stage.saveData.entities.ContainsKey(entity.saveKey));
-            stage.saveData.SetEntity(entity);
+            while (writtenKeys.ContainsKey(entity.saveKey));
+            writtenKeys[entity.saveKey] = true;
         }
 
-        var path = SaveData.GetStageDefaultDataPath(stage);
-        var json = stage.saveData.Serialise();
-        var str = json.ToString();
-        Debug.Log("Save: " + path + "\n" + str);
-        SaveData.TextWrite(path, str);
         AssetDatabase.Refresh();
     }
 

@@ -33,11 +33,14 @@ public static class MathUtils
             next * (0.5f * pcCb - 0.5f * pcSq);
     }
 
-    public static Vector3 VectorOnLine(Vector3 vec, Vector3 line)
+    public static Vector3 VectorOnLine(Vector3 vec, Vector3 line, bool clamp = true)
     {
-        var dot = Vector3.Dot(vec, line);
-        if (dot <= 0.0f)
-            return Vector3.zero;
+        if (clamp)
+        {
+            var dot = Vector3.Dot(vec, line);
+            if (dot <= 0.0f)
+                return Vector3.zero;
+        }
         
         var lineDir = line.normalized;
         vec.x *= lineDir.x;
@@ -47,14 +50,17 @@ public static class MathUtils
         return vec;
     }
 
-    public static Vector3 VectorSubtractDirection(Vector3 vec, Vector3 dir)
+    public static Vector3 VectorSubtractDirection(Vector3 vec, Vector3 dir, bool clamp = true)
     {
         dir.Normalize();
 
         var dot = Vector3.Dot(vec.normalized, dir * vec.magnitude);
-        if (dot <= 0.0f)
-            return vec;
-        
+        if (clamp)
+        {
+            if (dot <= 0.0f)
+                return vec;
+        }
+            
         return vec - dir * dot;
     }
 }

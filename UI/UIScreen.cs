@@ -51,6 +51,7 @@ public class UIScreen : MonoBehaviour
         {
             if (button.navigation.mode == Navigation.Mode.None)
                 continue;
+            
             EventSystem.current.SetSelectedGameObject(button.gameObject);
             break;
         }

@@ -2,15 +2,17 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TriggerStateObject : MonoBehaviour {
+public class TriggerStateObject : GameBehaviour 
+{
+    public GameObject objectUntriggered;
+    public GameObject objectTriggered;
+    public string condition;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    public override void Reset()
+    {
+        base.Reset();
+        bool triggered = GameStage.main.saveData.IsTrue(condition);
+        //objectUntriggered.SetActive(triggered == false);
+        //objectTriggered.SetActive(triggered);
+    }
 }

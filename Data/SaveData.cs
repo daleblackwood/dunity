@@ -8,22 +8,16 @@ public class SaveData : MonoBehaviour
 {
     static public SaveData main { get; private set; }
 
-    [Serializable]
-    public class GameData
+    public class GameData : SaveNode
     {
-        public string currentStage = "";
-        public string previousStage = "";
-        public SerializableDictionary<string, StageData> stages = new SerializableDictionary<string, StageData>();
+        public string currentStage { 
+            get { return GetString("CURRENT_STAGE"); }
+            set { SetValue("CURRENT_STAGE", value); }
+        }
 
-        public StageData GetStageData(GameStage stage)
-        {
-            var key = ParseSaveKey(stage.saveKey);
-            if (stages.ContainsKey(key) == false)
-            {
-                return LoadStageDefaultData(stage);
-            }
-
-            return stages[key];
+        public string previousStage { 
+            get { return GetString("PREVIOUS_STAGE"); }
+            set { SetValue("PREVIOUS_STAGE", value); }
         }
 
         public void SetStage(string stageName)
@@ -35,95 +29,23 @@ public class SaveData : MonoBehaviour
             }
         }
 
+        public StageData GetStageData(GameStage stage)
+        {
+            return GetChild<StageData>(stage.saveKey);
+        }
+
         public void SetStageData(GameStage stage)
         {
-            var key = ParseSaveKey(stage.saveKey);
-            stages[key] = stage.saveData;
-        }
-
-        public JSONObject Serialise()
-        {
-            var json = new JSONObject();
-            json["currentStage"] = new JSONString(currentStage);
-            json["previousStage"] = new JSONString(previousStage);
-
-            var stageNodes = json["stages"] = new JSONObject();
-            foreach (var pair in stages)
-            {
-                stageNodes[pair.Key] = pair.Value.Serialise();
-            }
-            return json;
-        }
-
-        public void Deserialise(JSONObject json)
-        {
-            stages.Clear();
-            currentStage = json["currentStage"].Value;
-            previousStage = json["previousStage"].Value;
-
-            var stageNodes = json["stages"].AsObject;
-            if (stageNodes != null)
-            {
-                foreach (KeyValuePair<string, JSONNode> node in stageNodes)
-                {
-                    var stage = new StageData();
-                    stage.Deserialise(node.Value.AsObject);
-                }
-            }
+            SetChild(stage.saveKey, stage.saveData);
         }
     }
 
-    [Serializable]
-    public class StageData
+    public class StageData : SaveNode
     {
-        public SerializableDictionary<string, EntitySaveState> entities = new SerializableDictionary<string, EntitySaveState>();
-
-        public string lastDoor = "";
-
-        public EntitySaveState GetEntity(Entity entity)
-        {
-            var key = ParseSaveKey(entity.saveKey);
-            if (entities.ContainsKey(key) == false)
-                return EntitySaveState.None;
-
-            return entities[key];
+        public string spawnPoint { 
+            get { return GetString("LAST_DOOR"); }
+            set { SetValue("LAST_DOOR", value); }
         }
-
-        public void SetEntity(Entity entity)
-        {
-            var key = ParseSaveKey(entity.saveKey);
-            entities[key] = entity.saveState;
-        }
-
-        public JSONObject Serialise()
-        {
-            var json = new JSONObject();
-            json["lastDoor"] = lastDoor;
-            var entityNodes = json["entities"] = new JSONObject();
-            foreach (var pair in entities)
-            {
-                entityNodes[pair.Key] = (int)pair.Value;
-            }
-            return json;
-        }
-
-        public void Deserialise(JSONObject json)
-        {
-            entities.Clear();
-            lastDoor = json["lastDoor"].Value;
-            var entityNodes = json["entities"].AsObject;
-            foreach (KeyValuePair<string, JSONNode> node in entityNodes)
-            {
-                entities[node.Key] = (EntitySaveState)(node.Value.AsInt);
-            }
-        }
-    }
-
-    public enum EntitySaveState
-    {
-        None,
-        Triggered,
-        Removed
     }
 
     static public string ResourcePath { get { return Application.dataPath + "/Resources"; } }
@@ -131,7 +53,7 @@ public class SaveData : MonoBehaviour
 
     static public GameData LoadGameData(int slot)
     {
-        var key = ParseSaveKey("SAVE_" + slot);
+        var key = EvalUtils.ParseToken("SAVE_" + slot);
         var path = SavePath + "/" + key + ".SAV";
         var str = TextRead(path);
         if (string.IsNullOrEmpty(str))
@@ -142,62 +64,20 @@ public class SaveData : MonoBehaviour
             return null;
         
         var gameData = new GameData();
-        gameData.Deserialise(json.AsObject);
+        gameData.data = json.AsObject;
 
         return gameData;
-        //return DataRead<GameData>(path);
     }
 
     static public void SaveGameData(int slot, GameData game)
     {
-        var key = ParseSaveKey("SAVE_" + slot);
+        var key = EvalUtils.ParseToken("SAVE_" + slot);
         var path = SavePath + "/" + key + ".SAV";
-        var json = game.Serialise();
+        var json = game.data;
         TextWrite(path, json.ToString());
-        //DataWrite(path, game);
     }
 
-    static public StageData LoadStageDefaultData(GameStage stage)
-    {
-        var path = GetStageDefaultDataPath(stage);
-        var str = TextRead(path);
-        if (str == null)
-            return null;
-
-        var json = JSON.Parse(str);
-        if (json == null)
-            return null;
-        
-        var stageData = new StageData();
-        stageData.Deserialise(json.AsObject);
-        return stageData;
-        //return DataRead<StageData>(path);
-    }
-
-    static public string GetStageDefaultDataPath(GameStage stage)
-    {
-        return ResourcePath + "/" + stage.saveKey + ".STAGE";
-    }
-
-    /*
-    static public T DataRead<T>(string path)
-    {
-        var json = StringRead(path);
-        if (string.IsNullOrEmpty(json))
-            return default(T);
-        return JsonUtility.FromJson<T>(json);
-    }
-
-    static public void DataWrite<T>(string path, T data)
-    {
-        //var serializer = new XmlSerializer(typeof(T));
-        //serializer.Serialize(writer, data);
-        var json = JsonUtility.ToJson(data);
-        File.WriteAllText(path, json);
-    }
-    */
-
-    static public string TextRead(string path)
+    static string TextRead(string path)
     {
         if (File.Exists(path) == false)
             return null;
@@ -209,31 +89,9 @@ public class SaveData : MonoBehaviour
         return str;
     }
 
-    static public void TextWrite(string path, string text)
+    static void TextWrite(string path, string text)
     {
         File.WriteAllText(path, text);
-    }
-
-    static public string ParseSaveKey(string name)
-    {
-        if (string.IsNullOrEmpty(name))
-            return null;
-        
-        name = name.ToUpper().Trim();
-        var key = "";
-        for (var i=0; i<name.Length; i++)
-        {
-            var c = name[i];
-            if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z'))
-            {
-                key += c;
-            }
-            else
-            {
-                key += "_";
-            }
-        }
-        return key;
     }
 
     public GameData game { get; private set; }
@@ -260,5 +118,142 @@ public class SaveData : MonoBehaviour
     public void Save()
     {
         SaveGameData(slot, game);
+    }
+
+    public string LookupValue(string key)
+    {
+        if (GameStage.main != null)
+        {
+            var stageKey = GameStage.main.saveKey;
+            if (stageKey != null)
+            {
+                var data = game.GetString(stageKey + "." + key);
+                if (string.IsNullOrEmpty(data) == false)
+                {
+                    return data;
+                }
+            }
+        }
+        return game.GetString(key);
+    }
+}
+
+
+[System.Serializable]
+public class SaveNode
+{
+    public JSONObject data = new JSONObject();
+
+    public void SetValue(string key, int value)
+    {
+        key = EvalUtils.ParseToken(key);
+        data[key] = new JSONNumber(value);
+    }
+
+    public void SetValue(string key, float value)
+    {
+        key = EvalUtils.ParseToken(key);
+        data[key] = new JSONNumber(value);
+    }
+
+    public void SetValue(string key, string value)
+    {
+        key = EvalUtils.ParseToken(key);
+        data[key] = new JSONString(value);
+    }
+
+    public void SetValue(string key, bool value)
+    {
+        key = EvalUtils.ParseToken(key);
+        data[key] = new JSONBool(value);
+    }
+
+    public void SetChild(string key, SaveNode node)
+    {
+        EvalUtils.ParseToken(key);
+        data[key] = node.data;
+    }
+
+    public int GetInt(string key)
+    {
+        var node = GetNode(key);
+        if (node == null)
+            return 0;
+        return node.AsInt;
+    }
+
+    public float GetFloat(string key)
+    {
+        var node = GetNode(key);
+        if (node == null)
+            return 0.0f;
+        return node.AsFloat;
+    }
+
+    public bool GetBool(string key)
+    {
+        var node = GetNode(key);
+        if (node == null)
+            return false;
+        return node.AsBool;
+    }
+
+    public string GetString(string key)
+    {
+        var node = GetNode(key);
+        if (node == null)
+            return "";
+        return node.Value;
+    }
+
+    public SaveNode GetChild(string key)
+    {
+        return GetChild<SaveNode>(key);
+    }
+
+    public T GetChild<T>(string key) where T : SaveNode
+    {
+        var node = GetNode(key);
+        if (node == null)
+            return null;
+        
+        var result = System.Activator.CreateInstance<T>();
+        result.data = node.AsObject;
+        return result;
+    }
+
+    public bool IsTrue(string condition)
+    {
+        return EvalUtils.ParseCondition(condition, SaveData.main.LookupValue);
+    }
+
+    JSONNode GetNode(string key)
+    {
+        var node = (JSONNode)data;
+        do
+        {
+            var firstDot = key.IndexOf(".");
+            if (firstDot >= 0)
+            {
+                var subkey = key.Substring(0, firstDot);
+                key = key.Substring(firstDot + 1);
+
+                var token = EvalUtils.ParseToken(subkey);
+                node = data[key];
+                if (node == null)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                var token = EvalUtils.ParseToken(key);
+                node = data[key];
+                break;
+            }
+        }
+        while (key.Length > 0);
+
+        return node;
     }
 }

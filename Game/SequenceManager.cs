@@ -376,61 +376,16 @@ public class SequenceManager : MonoBehaviour
                 break;
         }
 
-        /*
-            
-        var dif = conversation.actorA.transform.position - conversation.actorB.transform.position;
-        dif = dif.normalized * 5.0f;
-        conversation.actorA.transform.position = conversation.actorB.transform.position + dif;
-
-        var talker = talkNode.actor;
-        if (talker == null)
-        {
-            talker = conversation.actorA;
-        }
-
-
-        Debug.Log("Sequence: Talk: " + talkActor.name + ": " + talkNode.speech);
-
-        //Game.Instance.ui.ToSign(talkNode.speech);
-
-        var talkerMover = talker.SetMover<TalkMover>();
-        if (talkerMover != null)
-        {
-            talkerMover.talking = true;
-        }
-
-        int conversantsTalking = 2;
-
-        if (conversation.actorA != talker)
-        {
-            var moverA = conversation.actorA.SetMover<TalkMover>();
-            moverA.talking = false;
-            conversation.actorA.SetTarget(talker);
-            conversantsTalking--;
-        }
-
-        if (conversation.actorB != talker)
-        {
-            var moverB = conversation.actorB.SetMover<TalkMover>();
-            moverB.talking = false;
-            conversation.actorB.SetTarget(talker);
-            conversantsTalking--;
-        }
-
-        if (conversantsTalking == 0)
-        {
-            talker.SetTarget(conversation.actorA);
-        }
-
-        Game.Instance.cam.Talk(talker, talker == conversation.actorA);
-
-        */
-
         var talkScreen = UIManager.main.GetScreen<UIScreenMessage>();
         talkScreen.speech.Speek(talkActor, talkNode.speech, left);
 
-        float msgTime = GetDisplayTime(talkNode.speech);
-        yield return StartCoroutine(CoWaitForPress(msgTime));
+        //float msgTime = GetDisplayTime(talkNode.speech);
+        //yield return StartCoroutine(CoWaitForPress(msgTime));
+
+        while (talkScreen.speech.speaking)
+        {
+            yield return null;
+        }
 
         if (talkNode.trigger != null)
         {

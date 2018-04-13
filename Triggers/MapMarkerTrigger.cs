@@ -27,7 +27,7 @@ public class MapMarkerTrigger : Triggerable
 
     override protected void OnTrigger()
     {
-        saveState = SaveData.EntitySaveState.Triggered;
+        //saveState = SaveData.EntitySaveState.Triggered;
         /*
         save.UnsetMarkers();
 

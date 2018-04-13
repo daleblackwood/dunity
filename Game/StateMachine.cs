@@ -79,11 +79,19 @@ public class StateMachine
         stateCurrent = stateInfo;
         stateChangeTime = LocalTime;
 
-        host.StopAllCoroutines();
-        if (hostMono != null && hostMono.enabled == false) 
+        if (hostMono != null && hostMono.gameObject.activeSelf)
+        {
+            hostMono.StopAllCoroutines();
+            if (hostMono.enabled == false)
+                return null;
+
+            host.StartCoroutine(RunState(stateInfo));
+        }
+        else
+        {
             return null;
-        
-        host.StartCoroutine(RunState(stateInfo));
+        }
+
         return stateInfo;
     }
 

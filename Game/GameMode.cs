@@ -14,6 +14,8 @@ public abstract class GameMode : GameBehaviour, IStateHost
     public UIScreen loadScreen;
 
     public string firstScene = null;
+    public string stageName = null;
+    public string doorName = null;
 
     bool switching = false;
 
@@ -21,6 +23,11 @@ public abstract class GameMode : GameBehaviour, IStateHost
     {
         main = this;
         state = new StateMachine(this);
+    }
+
+    protected override void OnFirstReady()
+    {
+        stageName = Game.main.sceneName;
     }
 
     public void PickState()
@@ -47,25 +54,65 @@ public abstract class GameMode : GameBehaviour, IStateHost
 
     public virtual void StopMode() {}
 
-    public virtual void SwitchStage(string stageName)
+    public virtual void SwitchStage(string stageName, string doorName = null)
     {
         if (switching)
             return;
 
+        StartCoroutine(CoSwitchStage(stageName, doorName));
+    }
+
+    public void Reload()
+    {
+        SwitchStage(stageName, doorName);
+    }
+
+    IEnumerator CoSwitchStage(string stageName, string doorName)
+    {
         if (SaveData.main.game == null)
         {
             SaveData.main.Load();
         }
 
-        SaveData.main.game.SetStageData(GameStage.main);
-        SaveData.main.game.SetStage(stageName);
-        SaveData.main.Save();
-        Game.main.LoadScene(stageName, true, SwitchStageComplete);
-    }
+        if (string.IsNullOrEmpty(stageName))
+        {
+            stageName = this.stageName;
+        }
 
-    protected virtual void SwitchStageComplete()
-    {
-        //SaveData.main.Load();
-        switching = false;
+        bool isSameStage = stageName == this.stageName;
+
+        this.stageName = stageName;
+        this.doorName = doorName;
+
+        UIManager.main.SwitchTo(loadScreen);
+
+        if (isSameStage == false)
+        {
+            SaveData.main.game.SetStageData(GameStage.main);
+            SaveData.main.game.SetStage(stageName);
+        }
+
+        SaveData.main.Save();
+
+        yield return new WaitForSeconds(0.3f);
+
+        //if (isSameStage == false)
+        {
+            Game.main.LoadScene(stageName, false);
+        }
+
+        while (Game.isReady == false)
+        {
+            yield return null;
+        }
+
+        yield return null;
+
+        GameStage.main.Spawn();
+
+        yield return new WaitForSeconds(0.3f);
+
+        UIManager.main.SwitchTo(playScreen);
+
     }
 }

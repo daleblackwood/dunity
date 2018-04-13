@@ -67,11 +67,26 @@ public static class EditorTools
         Selection.activeObject = go;
     }
 
+    [MenuItem("Tools/Run Eval Tests")]
+    static void RunEvalTests()
+    {
+        EvalUtils.RunTests();
+    }
+
     static void AddToParent(Transform parent, Transform[] newChildren)
     {
         foreach (var child in newChildren)
         {
             child.SetParent(parent, true);
+        }
+    }
+
+    [MenuItem("Tools/Erase Saves")]
+    static void EraseSaves()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            SaveData.SaveGameData(i, new SaveData.GameData());
         }
     }
 }

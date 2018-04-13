@@ -16,8 +16,10 @@ public class Actor : Entity
 
     public int maxHealth = 3;
     public int health = 3;
+    public bool isAlive { get { return health > 0; } }
     public float distanceTargetMax = 10.0f;
     public float distanceContextMax = 5.0f;
+    [Range(0.0f, 1.0f)] public float peripheralPower = 0.5f;
 
     public Player player { get; private set; }
     public int playerIndex { get { return player == null ? -1 : player.index; } }
@@ -31,6 +33,9 @@ public class Actor : Entity
     public Actor targetFoe { get; private set; }
     public Actor targetActor { get; private set; }
     public Actor targetContext { get; private set; }
+
+    public System.Action onReset = null;
+    public System.Action onKill = null;
 
     protected override void OnInit()
     {
@@ -66,6 +71,10 @@ public class Actor : Entity
     {
         health = maxHealth;
         base.Reset();
+        if (onReset != null)
+        {
+            onReset();
+        }
     }
 
     protected override void OnDisable()
@@ -120,9 +129,15 @@ public class Actor : Entity
 
     public virtual void Kill() 
     {
-        FXer.main.Fire(FXType.SmokePuff, transform.position + Vector3.up);
+        health = 0;
+        FXer.main.Fire(FXType.SmokePuff, transform.position + Vector3.up, 0.5f);
         gameObject.SetActive(false);
         BaseCam.main.Shake(0.3f);
+
+        if (onKill != null)
+        {
+            onKill();
+        }
     }
 
     public void EnableMovement(bool enable)
@@ -187,7 +202,7 @@ public class Actor : Entity
             dif.y = 0.0f;
 
             var dot = Vector3.Dot(transform.forward, dif.normalized);
-            if (dot < -0.2f)
+            if (dot < -Mathf.Clamp01(peripheralPower))
             {
                 continue;
             }
@@ -224,7 +239,7 @@ public class Actor : Entity
             else
             {
                 var dot = Vector3.Dot(transform.forward, dif.normalized);
-                if (dot < -0.5f)
+                if (dot < -Mathf.Lerp(-1, Mathf.Clamp01(peripheralPower), 0.5f))
                 {
                     targetContext = null;
                 }

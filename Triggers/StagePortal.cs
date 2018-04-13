@@ -4,6 +4,7 @@ using System.Collections;
 public class StagePortal : MonoBehaviour
 {
     public string stageName = null;
+    public string doorName = null;
 
     float enableTime = 0.0f;
 
@@ -22,12 +23,12 @@ public class StagePortal : MonoBehaviour
             return;
 
         var loadStage = stageName;
-        if (string.IsNullOrEmpty(loadStage) && SaveData.main.game != null)
+        if (string.IsNullOrEmpty(loadStage) && string.IsNullOrEmpty(doorName) && SaveData.main.game != null)
         {
             loadStage = SaveData.main.game.previousStage;
         }
 
-        GameStage.main.saveData.lastDoor = name;
-        GameMode.main.SwitchStage(loadStage);
+        GameStage.main.saveData.spawnPoint = name;
+        GameMode.main.SwitchStage(loadStage, doorName);
     }
 }

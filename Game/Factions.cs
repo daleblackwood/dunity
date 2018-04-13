@@ -29,6 +29,9 @@ public class Factions : MonoBehaviour
 
     public Faction GetFaction(int index)
     {
+        if (factions == null)
+            return null;
+
         if (index < 0 || index >= factions.Length)
             return null;
 

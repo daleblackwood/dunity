@@ -48,7 +48,7 @@ public class GameStage : GameBehaviour, IStateHost
         base.OnEnable();
     }
 
-    protected virtual void Spawn()
+    public virtual void Spawn()
     {
     }
 
@@ -60,6 +60,10 @@ public class GameStage : GameBehaviour, IStateHost
             SaveData.main.game.SetStage(saveKey);
         }
         saveData = SaveData.main.game.GetStageData(this);
+        if (saveData == null)
+        {
+            saveData = new SaveData.StageData();
+        }
 
         Spawn();
 
@@ -67,6 +71,13 @@ public class GameStage : GameBehaviour, IStateHost
         EnableMovement(true);
 
         base.OnReady();
+
+        var gbs = GameObject.FindObjectsOfType<GameBehaviour>();
+        foreach (var gb in gbs)
+        {
+            gb.Reset();
+        }
+
         StartStage();
     }
 
@@ -249,6 +260,18 @@ public class GameStage : GameBehaviour, IStateHost
             actor.EnableMovement(enable);
         }
         isMovementEnabled = enable;
+    }
+
+    public bool IsActionPressed()
+    {
+        foreach (var player in players)
+        {
+            if (player.IsActionPressed())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Player[] GetPlayers()

@@ -32,6 +32,7 @@ public class ActorMover : GameBehaviour
 
     public Actions actions;
     public float speed = 12.0f;
+    public float initSpeed { get; private set; }
     public float jump = 1.0f;
     public bool canPush = false;
     public bool canSwim = false;
@@ -66,6 +67,9 @@ public class ActorMover : GameBehaviour
     protected float timeLastWater = 0.0f;
     public float timeSinceWater { get { return Time.time - timeLastWater; } }
 
+    protected float timeLastNonWater = 0.0f;
+    public float timeInWater { get { return Time.time - timeLastNonWater; } }
+
     public Vector3 velocity { get { return body == null ? Vector3.zero : body.velocity; } }
 
     public bool holdJump { get; private set; }
@@ -92,6 +96,7 @@ public class ActorMover : GameBehaviour
 
     Collider contactingOneWay = null;
     List<WaterContact> contactingWaters = new List<WaterContact>();
+    public Vector3 waterMove = Vector3.zero;
 
     // FIXME: Remove debug float
     public float debugFloat = 0.0f;
@@ -101,6 +106,7 @@ public class ActorMover : GameBehaviour
         body = GetComponent<Rigidbody>();
         body.constraints = RigidbodyConstraints.FreezeRotation;
 
+        initSpeed = speed;
 
         layerCast = GetCastMask();
         layerOneWay = LayerMask.NameToLayer("OneWay");
@@ -132,6 +138,8 @@ public class ActorMover : GameBehaviour
     public override void Reset()
     {
         CancelMomentum();
+        speed = initSpeed;
+        timeLastNonWater = Time.time;
         base.Reset();
     }
 
@@ -141,8 +149,9 @@ public class ActorMover : GameBehaviour
 
         UpdateWaterCollision();
         UpdateCollision();
-        OnMove();
+
         UpdateWaterMove();
+        OnMove();
     }
 
     void UpdateCollision()
@@ -233,7 +242,7 @@ public class ActorMover : GameBehaviour
                 {
                     if (body.velocity.y < 5.0f)
                     {
-                        body.AddForce(Physics.gravity * -1.5f, ForceMode.Impulse);
+                        body.AddForce(Physics.gravity * -0.15f * body.mass, ForceMode.Impulse);
                     }
                 }
             }
@@ -256,6 +265,8 @@ public class ActorMover : GameBehaviour
         // water collisions
         inWater = false;
 
+        {
+        /*
         for (int i=contactingWaters.Count-1; i >= 0; i--)
         {
             var water = contactingWaters[i];
@@ -270,10 +281,12 @@ public class ActorMover : GameBehaviour
                 contactingWaters.RemoveAt(i);
                 continue;
             }
+            */
 
             float waterIn = 0.1f;
 
             var origin = collider.bounds.center;
+            origin.y = collider.bounds.max.y;
             origin.y += waterIn + 0.7f;
             var dist = origin.y - collider.bounds.min.y;
             RaycastHit hitInfo;
@@ -287,7 +300,7 @@ public class ActorMover : GameBehaviour
                     {
                         if (hitInfo.distance < dist * 0.5f - waterIn)
                         {
-                            body.AddForce(Physics.gravity * -2.0f, ForceMode.Impulse);
+                            body.AddForce(Physics.gravity * -10.0f, ForceMode.Acceleration);
                         }
                     }
                 }
@@ -297,16 +310,24 @@ public class ActorMover : GameBehaviour
         if (timeSinceWater > 0.1f)
         {
             contactingWaters.Clear();
+            timeLastNonWater = Time.time;
         }
     }
 
     void UpdateWaterMove()
     {
+        waterMove = Vector3.zero;
+
         foreach (var contactingWater in contactingWaters)
         {   
             var lastPos = contactingWater.lastPos;
             contactingWater.lastPos = contactingWater.collider.transform.position;
-            var waterMove = contactingWater.lastPos - lastPos;
+            var wm = contactingWater.lastPos - lastPos;
+            if (wm.sqrMagnitude > waterMove.sqrMagnitude)
+            {
+                waterMove = wm;
+            }
+
             //if (waterMove.sqrMagnitude > 0.01f)
             {
                 /*
@@ -323,10 +344,28 @@ public class ActorMover : GameBehaviour
 
                 body.AddForce(force, ForceMode.Impulse);
                 */
-
-                transform.position += waterMove;
             }
         }
+
+        /*
+        if (waterMove.sqrMagnitude > 0.01f)
+        {
+            var waterVelocity = waterMove;
+            waterVelocity.y = 0.1f;
+            //waterVelocity /= Time.fixedUnscaledDeltaTime;
+
+            var waterCross = Vector3.Cross(waterVelocity.normalized, Vector3.up);
+            //var bodyVelocity = MathUtils.VectorSubtractDirection(body.velocity, waterVelocity.normalized);
+
+            var subtractVelocity = MathUtils.VectorOnLine(body.velocity, waterCross);
+            //newVelocity += waterMove;
+
+            var force = body.mass * (waterVelocity - subtractVelocity);
+            //body.velocity = newVelocity;
+
+            body.AddForce(force, ForceMode.Impulse);
+        }
+        */
 
         if (canSwim)
         {
@@ -519,12 +558,19 @@ public class ActorMover : GameBehaviour
             {
                 float helpPower = Mathf.Clamp01((1.0f - hitGround.normal.y) * 3.0f);
                 debugFloat = helpPower;
-                body.AddForce(helpPower * Physics.gravity * -3.0f, ForceMode.Impulse);
+                body.AddForce(helpPower * Physics.gravity * -3.0f, ForceMode.Acceleration);
             }
         }
 
+        if (waterMove.sqrMagnitude > 0.01f)
+        {
+            var waterDir = waterMove.normalized;
+            targetVelocity = MathUtils.VectorSubtractDirection(targetVelocity, waterDir, false);
+            targetVelocity += waterDir;
+        }
+
         var moveForce = targetVelocity;
-        float forceM = 4.0f * power;
+        float forceM = power * 20.0f + 5.0f;
         if (knocking)
         {
             moveForce = knock * 100.0f;
@@ -552,19 +598,19 @@ public class ActorMover : GameBehaviour
         wasOnGround = onGround;
 
         var addForce = forceM * moveForce;
-        body.AddForce(addForce, ForceMode.Impulse);
+        body.AddForce(addForce, ForceMode.Acceleration);
     }
 
     protected virtual void UpdateFall()
     {
         if (onGround == false)
         {
-            float downForce = 1.0f;
+            float downForce = 10.0f;
             if (body.velocity.y < 0.0f || (jumping == false && bounced == false))
             {
-                downForce = body.velocity.y < 0.0f ? 3.0f : 25.0f;
+                downForce = body.velocity.y < 0.0f ? 30.0f : 100.0f;
             }
-            body.AddForce(Vector3.down * downForce, ForceMode.Impulse);
+            body.AddForce(Vector3.down * downForce, ForceMode.Acceleration);
         }
         else
         {
@@ -652,7 +698,7 @@ public class ActorMover : GameBehaviour
         return input;
     }
 
-    void OnTriggerStay(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.layer == layerOneWay)
         {
@@ -669,6 +715,20 @@ public class ActorMover : GameBehaviour
                     return;
             }
             contactingWaters.Add(new WaterContact(other));
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.layer == layerWater)
+        {
+            for (int i = contactingWaters.Count - 1; i >= 0; i--)
+            {
+                if (contactingWaters[i].collider == other)
+                {
+                    contactingWaters.RemoveAt(i);
+                }
+            }
         }
     }
 

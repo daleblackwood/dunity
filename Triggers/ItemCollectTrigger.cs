@@ -13,6 +13,7 @@ public class ItemCollectTrigger : MonoBehaviour
     int itemCount = 0;
     int prevItemCount = -1;
 	
+    /*
 	void Update() 
     {
         if (Game.isReady == false)
@@ -51,7 +52,7 @@ public class ItemCollectTrigger : MonoBehaviour
             }
         }
 	}
-
+    */
     void Announce()
     {
         int targetCount = itemKeys.Length;
