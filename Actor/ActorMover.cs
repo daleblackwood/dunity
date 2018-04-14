@@ -167,24 +167,27 @@ public class ActorMover : GameBehaviour
         var dist = collider.height * 0.5f + 0.1f;
         //var dir = Vector3.down + forward;
         //dist *= dir.magnitude;
-        if (Cast(out hitGround, origin, Vector3.down, dist))
+        if (timeSinceJump > 0.05f)
         {
-            onGround = hitGround.normal.y > 0.3f;
-            groundY = hitGround.point.y;
-        }
-
-        // one way platform
-        if (contactingOneWay != null)
-        {
-            var placed = PlaceOnOneWay(contactingOneWay);
-            if (placed == false)
+            if (Cast(out hitGround, origin, Vector3.down, dist))
             {
-                contactingOneWay = null;
+                onGround = hitGround.normal.y > 0.3f;
+                groundY = hitGround.point.y;
             }
-            else
+
+            // one way platform
+            if (contactingOneWay != null)
             {
-                onGround = true;
-                groundY = contactingOneWay.bounds.max.y;
+                var placed = PlaceOnOneWay(contactingOneWay);
+                if (placed == false)
+                {
+                    contactingOneWay = null;
+                }
+                else
+                {
+                    onGround = true;
+                    groundY = contactingOneWay.bounds.max.y;
+                }
             }
         }
 

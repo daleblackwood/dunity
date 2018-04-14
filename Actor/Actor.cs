@@ -148,7 +148,7 @@ public class Actor : Entity
         }
         if (mover != null)
         {
-            mover.enabled = enable;
+            //mover.enabled = enable;
         }
         isMovementEnabled = enable;
     }
