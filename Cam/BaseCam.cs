@@ -15,7 +15,6 @@ public abstract class BaseCam : MonoBehaviour
     protected Vector3 targetPos;
     protected Camera cam = null;
 
-    Collider camboxConstrainer = null;
     Bounds[] cambounds = null;
 
     float shakePower = 0.0f;
@@ -23,10 +22,16 @@ public abstract class BaseCam : MonoBehaviour
     Quaternion shakeRot = Quaternion.identity;
     protected Dictionary<Transform, ActorMover> movers = new Dictionary<Transform, ActorMover>();
 
+    BaseCam[] otherCams = null;
+
     protected virtual void OnEnable()
     {
-        main = this;
+        if (main == null)
+        {
+            main = this;
+        }
         cam = GetComponent<Camera>();
+        otherCams = GetComponents<BaseCam>();
         movers.Clear();
 
         if (camBoxParent != null)
@@ -187,5 +192,28 @@ public abstract class BaseCam : MonoBehaviour
     public virtual void SkipTo()
     {
         targetPos = GetTargetPos();
+    }
+
+    public T SwitchTo<T>() where T : BaseCam
+    {
+        T result = null;
+        foreach (var cam in otherCams)
+        {
+            bool use = cam is T;
+            if (use)
+            {
+                result = (T)cam;
+            }
+            cam.enabled = cam is T;
+        }
+        return result;
+    }
+
+    public void SwitchToDefault()
+    {
+        foreach (var cam in otherCams)
+        {
+            cam.enabled = cam == main;
+        }
     }
 }

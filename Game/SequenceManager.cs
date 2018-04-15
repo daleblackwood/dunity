@@ -74,6 +74,8 @@ public class SequenceManager : MonoBehaviour
         //Game.main.cam.Reset();
         //Game.main.ui.ToGame();
         //Game.main.player.inputEnabled = true;
+        TimeManager.main.Reset();
+        BaseCam.main.SwitchToDefault();
         allowAdd = true;
 
         if (onComplete != null)
@@ -188,11 +190,20 @@ public class SequenceManager : MonoBehaviour
         //Game.Instance.time.Freeze();
         //Game.Instance.ui.ToCutscene();
 
+        TimeManager.main.Freeze();
+
         yield return new WaitForSecondsRealtime(0.5f);
 
         //Game.Instance.cam.Reveal(target);
 
-        yield return new WaitForSecondsRealtime(0.5f);
+        var revealCam = BaseCam.main.SwitchTo<CamReveal>();
+        revealCam.target = target;
+
+        yield return new WaitForSecondsRealtime(0.2f);
+        while (revealCam.atPosition == false)
+        {
+            yield return null;
+        }
     }
 
     public void FocusTarget(Transform target, System.Action onComplete = null)

@@ -10,6 +10,7 @@ public class TalkTrigger : Triggerable
     [HideInInspector] public List<TalkNode> talkNodes = new List<TalkNode>();
     public System.Action onComplete = null;
     public Conversation conversation { get; private set; }
+    public Conditions conditions;
 
     protected override void Awake()
     {

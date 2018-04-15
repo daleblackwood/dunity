@@ -2,11 +2,7 @@
 
 public class DevMode : GameMode
 {
-    public override void StartMode()
-    {
-    }
-
-    public override void NextGame()
+    protected override void OnNextGame()
     {
         GameStage.main.StartStage();
     }

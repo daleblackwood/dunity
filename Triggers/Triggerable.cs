@@ -31,7 +31,7 @@ public abstract class Triggerable : Entity
         {
             if (doReveal && nowTriggered)
             {
-                if (SequenceManager.main.isPlaying == false)
+                //if (SequenceManager.main.isPlaying == false)
                 {
                     SequenceManager.main.RevealTarget(transform, () =>
                     {

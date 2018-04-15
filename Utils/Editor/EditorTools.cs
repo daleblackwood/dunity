@@ -67,6 +67,24 @@ public static class EditorTools
         Selection.activeObject = go;
     }
 
+    [MenuItem("GameObject/Parent all to Last", false, 1)]
+    static void ParentToLast()
+    {
+        if (Selection.gameObjects.Length < 2)
+        {
+            Debug.LogError("Select two or more.");
+            return;
+        }
+
+        var last = Selection.gameObjects[Selection.gameObjects.Length - 1];
+        var children = new Transform[Selection.gameObjects.Length - 1];
+        for (int i = 0; i < children.Length; i++)
+        {
+            children[i] = Selection.gameObjects[i].transform;
+        }
+        AddToParent(last.transform.parent, children);
+    }
+
     [MenuItem("Tools/Run Eval Tests")]
     static void RunEvalTests()
     {
@@ -81,12 +99,10 @@ public static class EditorTools
         }
     }
 
-    [MenuItem("Tools/Erase Saves")]
-    static void EraseSaves()
+    [MenuItem("Tools/Clear Dev Save")]
+    static void ClearDevSave()
     {
-        for (int i = 0; i < 10; i++)
-        {
-            SaveData.SaveGameData(i, new SaveData.GameData());
-        }
+        SaveData.SaveGameData(SaveData.SAVE_SLOT_DEV, new SaveData.GameData());
+        SaveData.LoadGameData(SaveData.SAVE_SLOT_DEV);
     }
 }

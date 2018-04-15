@@ -48,6 +48,8 @@ public class SaveData : MonoBehaviour
         }
     }
 
+    public const int SAVE_SLOT_DEV = -1;
+
     static public string ResourcePath { get { return Application.dataPath + "/Resources"; } }
     static public string SavePath { get { return Application.persistentDataPath; } }
 
@@ -100,10 +102,12 @@ public class SaveData : MonoBehaviour
     void Awake()
     {
         main = this;
+        slot = SAVE_SLOT_DEV;
     }
 
-    public void Load(int loadSlot = -1)
+    public void Load(int loadSlot = SAVE_SLOT_DEV)
     {
+        Debug.LogFormat("Load game {0}", loadSlot);
         if (loadSlot != -1)
         {
             slot = loadSlot;
@@ -117,6 +121,7 @@ public class SaveData : MonoBehaviour
 
     public void Save()
     {
+        Debug.LogFormat("Save game {0}", slot);
         SaveGameData(slot, game);
     }
 
@@ -238,8 +243,8 @@ public class SaveNode
                 var subkey = key.Substring(0, firstDot);
                 key = key.Substring(firstDot + 1);
 
-                var token = EvalUtils.ParseToken(subkey);
-                node = data[key];
+                var token = subkey.Trim();
+                node = data[token];
                 if (node == null)
                 {
                     break;
@@ -248,7 +253,7 @@ public class SaveNode
             else
             {
                 var token = EvalUtils.ParseToken(key);
-                node = data[key];
+                node = node[key];
                 break;
             }
         }

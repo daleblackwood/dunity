@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class MultiTrigger : Triggerable
+public class CountTrigger : Triggerable
 {
     public Triggerable triggerable;
     public int requireCount = 2;

@@ -83,6 +83,8 @@ public class MusicPlayer : MonoBehaviour
 
 	public void Resume()
 	{
+        if (source == null)
+            return;
 		source.Play();
 		source.time = stopTime;
 	}

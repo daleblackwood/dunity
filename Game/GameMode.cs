@@ -48,11 +48,29 @@ public abstract class GameMode : GameBehaviour, IStateHost
         ControlManager.main.StopDiscovery();
     }
 
-    public abstract void StartMode();
+    public void StartMode()
+    {
+        Debug.LogFormat("{0}: start game mode", GetKey());
+        OnStartMode();
+    }
 
-    public virtual void NextGame() {}
+    protected virtual void OnStartMode() {}
 
-    public virtual void StopMode() {}
+    public void NextGame() 
+    {
+        Debug.LogFormat("{0}: next game", GetKey());
+        OnNextGame();
+    }
+
+    protected virtual void OnNextGame() {}
+
+    public void StopMode() 
+    {
+        Debug.LogFormat("{0}: stop game mode", GetKey());
+        OnStopMode();
+    }
+
+    protected virtual void OnStopMode() {}
 
     public virtual void SwitchStage(string stageName, string doorName = null)
     {
@@ -114,5 +132,10 @@ public abstract class GameMode : GameBehaviour, IStateHost
 
         UIManager.main.SwitchTo(playScreen);
 
+    }
+
+    protected string GetKey()
+    {
+        return "Mode:" + GetType().Name;
     }
 }
