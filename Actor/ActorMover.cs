@@ -46,6 +46,7 @@ public class ActorMover : GameBehaviour
     public bool pushing { get; private set; }
     public bool knocking { get { return knock.sqrMagnitude > 0.1f; } }
     public Actor player { get; private set; }
+    public Vector3 lastGroundPos { get; private set; }
 
     protected Rigidbody body;
     protected new CapsuleCollider collider;
@@ -71,6 +72,7 @@ public class ActorMover : GameBehaviour
     public float timeInWater { get { return Time.time - timeLastNonWater; } }
 
     public Vector3 velocity { get { return body == null ? Vector3.zero : body.velocity; } }
+    public Vector3 targetVelocity { get; private set; }
 
     public bool holdJump { get; private set; }
     public bool jumping { get; private set; }
@@ -196,6 +198,7 @@ public class ActorMover : GameBehaviour
         if (onGround)
         {
             timeLastGround = Time.time;
+            lastGroundPos = transform.position;
             bounced = false;
         }
         else
@@ -503,11 +506,11 @@ public class ActorMover : GameBehaviour
         var forward = Vector3.Cross(right, Vector3.up);
 
         var move = actions.move;
-        var targetVelocity = move.y * forward;
-        targetVelocity += move.x * right;
-        targetVelocity = Vector3.ClampMagnitude(targetVelocity, 1.0f);
+        var vel = move.y * forward;
+        vel += move.x * right;
+        vel = Vector3.ClampMagnitude(vel, 1.0f);
 
-        return targetVelocity;
+        return vel;
     }
 
     protected virtual void OnMove()
@@ -518,7 +521,7 @@ public class ActorMover : GameBehaviour
             speedLimited *= 0.4f;
         }
 
-        var targetVelocity = GetMoveVector() * speedLimited;
+        targetVelocity = GetMoveVector() * speedLimited;
 
         if (targetVelocity.sqrMagnitude > 0.01f)
         {
@@ -576,18 +579,15 @@ public class ActorMover : GameBehaviour
         float forceM = power * 20.0f + 5.0f;
         if (knocking)
         {
-            moveForce = knock * 100.0f;
+            moveForce = knock * 1.0f;
             knock *= MathUtils.FixedDeltaEase(0.5f);
-
-            var knockDir = -knock.normalized;
-            knockDir.y = 0.0f;
-            targetRotation = Quaternion.LookRotation(knockDir, Vector3.up);
-            transform.rotation = targetRotation;
         }
         else
         {
             var removePower = 1.0f;
             var removeVelocity = body.velocity;
+
+            body.angularVelocity = Vector3.zero;
 
             removeVelocity.y = 0.0f;
             var removeMag = Mathf.Min(speed, removeVelocity.magnitude) * removePower;
@@ -658,8 +658,17 @@ public class ActorMover : GameBehaviour
 
     public void Knock(Vector3 knockForce)
     {
-        knock = knockForce * knockPower;
-        body.AddForce(knock * 100.0f);
+        knock = knockForce * knockPower * 2.0f;
+        Vector3 impulse = knock * body.mass * 10.0f;
+        body.constraints = RigidbodyConstraints.None;
+        body.AddForce(impulse, ForceMode.Impulse);
+
+        body.AddRelativeTorque(Vector3.right * body.mass * 100.0f, ForceMode.Impulse);
+
+        var knockDir = -knock.normalized;
+        knockDir.y = 0.0f;
+        targetRotation = Quaternion.LookRotation(knockDir, Vector3.up);
+        transform.rotation = targetRotation;
     }
 
     public bool CanJump
@@ -682,7 +691,7 @@ public class ActorMover : GameBehaviour
         {
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, MathUtils.DeltaEase(0.2f)); 
         }
-        var vel = body.velocity;
+        var vel = targetVelocity.sqrMagnitude > 0.1f ? body.velocity : Vector3.zero;
         vel.y = 0.0f;
         float animSpeed = vel.magnitude * 0.18f;
         animator.SetFloat("Speed", animSpeed);

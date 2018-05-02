@@ -6,6 +6,7 @@ public class TriggerStateObject : Triggerable
 {
     public GameObject objectUntriggered;
     public GameObject objectTriggered;
+    public Triggerable onTrigger;
     public string condition;
 
     public override void Reset()
@@ -40,5 +41,9 @@ public class TriggerStateObject : Triggerable
     {
         GameStage.main.saveData.SetValue(saveKey, true);
         Evaluate();
+        if (onTrigger != null)
+        {
+            onTrigger.Trigger(true);
+        }
     }
 }

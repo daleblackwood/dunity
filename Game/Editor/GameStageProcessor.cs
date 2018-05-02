@@ -51,27 +51,36 @@ public class GameStageProcessor : UnityEditor.AssetModificationProcessor
             return;
         }
 
-        stage.saveKey = scene.name;
-        Debug.Log("Writing stage " + stage.saveKey + "...");
+        var stageSo = new SerializedObject(stage);
+        var stageSaveKey = stageSo.FindProperty("saveKey");
+        stageSaveKey.stringValue = scene.name;
+        Debug.Log("Writing stage " + stageSaveKey.stringValue + "...");
 
         var writtenKeys = new Dictionary<string, bool>();
 
         foreach (var entity in entities)
         {
+            var entitySo = new SerializedObject(entity);
+            var entitySaveKey = entitySo.FindProperty("saveKey");
             int index = 0;
             do 
             {
-                entity.saveKey = EvalUtils.ParseToken(entity.name);
+                entitySaveKey.stringValue = EvalUtils.ParseToken(entity.name);
                 if (index++ > 0)
                 {
-                    entity.saveKey += "_" + index.ToString();
+                    entitySaveKey.stringValue += "_" + index.ToString();
                 }
             }
-            while (writtenKeys.ContainsKey(entity.saveKey));
-            writtenKeys[entity.saveKey] = true;
+            while (writtenKeys.ContainsKey(entitySaveKey.stringValue));
+            writtenKeys[entitySaveKey.stringValue] = true;
+            entitySo.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        stageSo.ApplyModifiedPropertiesWithoutUndo();
+
         AssetDatabase.Refresh();
+
+        Debug.Log("Stage " + stageSaveKey.stringValue + " written.");
     }
 
     static void CollectEntities(Transform parent, List<Entity> entities)

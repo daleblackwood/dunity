@@ -85,6 +85,11 @@ public abstract class GameMode : GameBehaviour, IStateHost
         SwitchStage(stageName, doorName);
     }
 
+    public void Respawn()
+    {
+        GameStage.main.Spawn();
+    }
+
     IEnumerator CoSwitchStage(string stageName, string doorName)
     {
         if (SaveData.main.game == null)
@@ -110,6 +115,10 @@ public abstract class GameMode : GameBehaviour, IStateHost
             SaveData.main.game.SetStage(stageName);
         }
 
+        if (GameStage.main != null)
+        {
+            GameStage.main.OnSave();
+        }
         SaveData.main.Save();
 
         yield return new WaitForSeconds(0.3f);

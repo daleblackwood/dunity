@@ -16,9 +16,9 @@ public class WorldPath : WorldBlock
     public float m_pathWidth = 2.0f;
     public SerializableDictionary<int, float> m_pointWidths = new SerializableDictionary<int, float>();
 
-    protected override EdgeLoop GetLoop()
+    protected override EdgeLoop GetLoop(EdgeLoopOptions options = null)
     {
-        var src = base.GetLoop();
+        var src = base.GetLoop(options);
         int srcPointCount = src.m_points.Count;
         if (srcPointCount < 2)
             return src;

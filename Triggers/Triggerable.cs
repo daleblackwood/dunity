@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Triggerable : Entity 
+public abstract class Triggerable : Entity, ITriggerable 
 {
     public bool isTriggered { get; private set; }
     public bool doReveal = false;

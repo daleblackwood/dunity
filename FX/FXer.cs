@@ -16,6 +16,8 @@ public enum FXType
     //Bullet,
     //ExplosionFloor,
     //BigDust,
+    EnemyExplode,
+    HitSmack,
     MAX
 }
 

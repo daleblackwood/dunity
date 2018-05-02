@@ -32,6 +32,12 @@ public abstract class BaseAI : BaseControl
 
     protected override void UpdateActions()
     {
+        if (actor.isMovementEnabled == false)
+        {
+            actions.Reset();
+            return;
+        }
+
         targetPos.y = transform.position.y;
 
         if (targetPos == Vector3.zero)

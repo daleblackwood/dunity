@@ -9,6 +9,7 @@ public class Player : GameBehaviour
     public Actor targetContext { get; private set; }
     public ContextActionTrigger[] contexActions = null;
     float waterTimeRemaining = 2.0f;
+    public float maxWaterTime = 10.0f;
     UIProgressMeterer meterer = null;
 
     override protected void OnInit()
@@ -43,17 +44,21 @@ public class Player : GameBehaviour
 
         if (actor.mover.inWater && actor.isAlive)
         {
-            float maxWaterTime = 3.0f;
             float waterPC = Mathf.Clamp01(actor.mover.timeInWater / maxWaterTime);
 
             if (meterer != null)
             {
-                meterer.ShowProgress(transform, actor.faction.color, 1.0f - waterPC);
+                meterer.ShowProgress(transform, actor.faction.color, Mathf.Clamp01(1.0f - waterPC * 1.1f));
             }
 
             if (waterPC >= 1.0f)
             {
-                actor.Kill();
+                //actor.Kill();
+                actor.TakeHit(null);
+                if (actor.isAlive)
+                {
+                    actor.transform.position = actor.mover.lastGroundPos;
+                }
             }
         }
     }
@@ -64,7 +69,7 @@ public class Player : GameBehaviour
 
     void OnKill()
     {
-        GameMode.main.Reload();
+        GameMode.main.Respawn();
     }
 
     public bool IsActionPressed()

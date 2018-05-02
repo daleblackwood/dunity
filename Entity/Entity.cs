@@ -7,5 +7,7 @@ public class Entity : GameBehaviour
 
     public bool isTargetable = false;
 
-    public virtual void TakeHit(Entity other, int damage = 1) {}
+    public virtual void TakeHit(EntityHit hit = null) {}
+
+    public virtual void OnSave() {}
 }

@@ -39,6 +39,7 @@ public class AttackActioner : BaseActioner
 
     void Attack()
     {
+        actor.SetInvincibleFor(0.2f, true);
         attackCount++;
         var trigger = attackCount % 2 == 0 ? "AttackFore" : "AttackBack";
         mover.animator.SetTrigger(trigger);

@@ -15,7 +15,8 @@ public abstract class BaseCam : MonoBehaviour
     protected Vector3 targetPos;
     protected Camera cam = null;
 
-    Bounds[] cambounds = null;
+    Bounds[] camBounds = null;
+    Bounds[] camAvoids = null;
 
     float shakePower = 0.0f;
     float joltPower = 0.0f;
@@ -36,7 +37,8 @@ public abstract class BaseCam : MonoBehaviour
 
         if (camBoxParent != null)
         {
-            cambounds = new Bounds[camBoxParent.childCount];
+            var boundsList = new List<Bounds>();
+            var avoidsList = new List<Bounds>();
             for (int i=0; i<camBoxParent.childCount; i++)
             {
                 var cambox = camBoxParent.GetChild(i);
@@ -45,9 +47,19 @@ public abstract class BaseCam : MonoBehaviour
                 size.y = Mathf.Abs(size.y);
                 size.z = Mathf.Abs(size.z);
                 var bounds = new Bounds(cambox.position, size);
-                cambounds[i] = bounds;
+
+                if (cambox.CompareTag("CamAvoid"))
+                {
+                    avoidsList.Add(bounds);
+                }
+                else
+                {
+                    boundsList.Add(bounds);
+                }
                 cambox.gameObject.SetActive(false);
             }
+            camBounds = boundsList.ToArray();
+            camAvoids = avoidsList.ToArray();
         }
     }
 
@@ -83,7 +95,7 @@ public abstract class BaseCam : MonoBehaviour
         UpdateTargetPos();
         UpdateCamera();
 
-        if (shakePower > 0.001f)
+        if (shakePower > 0.001f || joltPower > 0.001f)
         {
             UpdateShake();
         }
@@ -124,12 +136,13 @@ public abstract class BaseCam : MonoBehaviour
 
     public Vector3 Constrain(Vector3 position)
     {
-        if (cambounds != null && cambounds.Length > 0)
+        if (camBounds != null && camBounds.Length > 0)
         {
             var bounds = new Bounds();
             var isSet = false;
+            var inAvoid = false;
             float closest2 = float.PositiveInfinity;
-            foreach (var cb in cambounds)
+            foreach (var cb in camBounds)
             {
                 var p = cb.ClosestPoint(position);
                 var dist2 = (position - p).sqrMagnitude;
@@ -139,6 +152,20 @@ public abstract class BaseCam : MonoBehaviour
                 closest2 = dist2;
                 bounds = cb;
                 isSet = true;
+            }
+
+            foreach (var cb in camAvoids)
+            {
+                if (cb.Contains(position))
+                {
+                    inAvoid = true;
+                    break;
+                }
+            }
+
+            if (bounds.Contains(position) == false && inAvoid == false)
+            {
+                return position;
             }
 
             if (isSet)

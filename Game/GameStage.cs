@@ -7,6 +7,8 @@ public class GameStage : GameBehaviour, IStateHost
 {
     static public GameStage main { get; private set; }
 
+    static public bool hasData { get { return main != null && main.saveData != null; } }
+
     static public readonly Actor[] NO_ACTORS = new Actor[0];
 
     [HideInInspector] public string saveKey = null;
@@ -21,6 +23,7 @@ public class GameStage : GameBehaviour, IStateHost
     Dictionary<Transform, Quaternion> initRotations = new Dictionary<Transform, Quaternion>();
     protected List<Player> players = new List<Player>();
     protected List<Actor> actors = new List<Actor>();
+    protected Entity[] allEntities = null;
 
     Dictionary<string, Actor[]> cacheFriends = new Dictionary<string, Actor[]>();
     Dictionary<string, Actor[]> cacheFoes = new Dictionary<string, Actor[]>();
@@ -136,6 +139,8 @@ public class GameStage : GameBehaviour, IStateHost
         cacheFriends.Clear();
         cacheFoes.Clear();
 
+        allEntities = GameObject.FindObjectsOfType<Entity>();
+
         var listActors = new List<Actor>();
         var listFriends = new Dictionary<string, List<Actor>>();
         var listFoes = new Dictionary<string, List<Actor>>();
@@ -223,6 +228,20 @@ public class GameStage : GameBehaviour, IStateHost
         EnableMovement(enable);
     }
 
+    public void OnSave()
+    {
+        if (allEntities != null)
+        {
+            foreach (var entity in allEntities)
+            {
+                if (entity != null && entity.isActiveAndEnabled)
+                {
+                    entity.OnSave();
+                }
+            }
+        }
+    }
+
     public void EnablePlayers(bool enable)
     {
         foreach (var player in players)
@@ -277,6 +296,14 @@ public class GameStage : GameBehaviour, IStateHost
     public Player[] GetPlayers()
     {
         return players.ToArray();
+    }
+
+    public Player GetPlayer(int index)
+    {
+        if (index < 0 || index >= players.Count)
+            return null;
+
+        return players[index];
     }
 
     public Actor[] GetActors()

@@ -14,6 +14,8 @@ public class Actor : Entity
     public ActorAnimator animator { get; private set; }
     public ActorHead head { get; private set; }
 
+    public Triggerable triggerOnKill;
+
     public int maxHealth = 3;
     public int health = 3;
     public bool isAlive { get { return health > 0; } }
@@ -21,11 +23,18 @@ public class Actor : Entity
     public float distanceContextMax = 5.0f;
     [Range(0.0f, 1.0f)] public float peripheralPower = 0.5f;
 
+    public float invincibleTime = 0.0f;
+    public bool isInvincible { get { return invincibleTime > 0.0f; } }
+    public bool invincibleMuted = false;
+
+    float actionDownTime = 0.0f;
+
     public Player player { get; private set; }
     public int playerIndex { get { return player == null ? -1 : player.index; } }
 
     protected BaseControl control = null;
-    public bool isMovementEnabled { get; private set; }
+    bool enableMovement = true;
+    public bool isMovementEnabled { get { return enableMovement && actionDownTime <= 0.0f;  } }
 
     int index = 0;
     int nextNearCheckFrame = 0;
@@ -33,6 +42,8 @@ public class Actor : Entity
     public Actor targetFoe { get; private set; }
     public Actor targetActor { get; private set; }
     public Actor targetContext { get; private set; }
+
+    public bool waterAllergic = false;
 
     public System.Action onReset = null;
     public System.Action onKill = null;
@@ -71,6 +82,8 @@ public class Actor : Entity
     {
         health = maxHealth;
         base.Reset();
+        mover.enabled = true;
+        mover.Reset();
         if (onReset != null)
         {
             onReset();
@@ -103,6 +116,21 @@ public class Actor : Entity
                 mover.UpdateActions(actions);
             }
         }
+
+        if (isInvincible)
+        {
+            invincibleTime -= Time.deltaTime;
+        }
+
+        if (actionDownTime > 0.0f)
+        {
+            actionDownTime -= Time.deltaTime;
+        }
+
+        if (mover.inWater && waterAllergic)
+        {
+            Kill();
+        }
     }
 
     public void SetControl(BaseControl control)
@@ -110,33 +138,85 @@ public class Actor : Entity
         this.control = control;
     }
 
-    public override void TakeHit(Entity other, int damage = 1) 
+    public override void TakeHit(EntityHit hit = null) 
     {
-        var otherActor = (Actor)other;
-        if (otherActor == null)
+        if (isInvincible)
             return;
-        
-        if (faction != otherActor.faction)
+
+        if (hit == null)
         {
-            health -= damage;
-            if (health <= 0)
+            hit = new EntityHit();
+        }
+        
+        Actor otherActor = hit.entity == null ? null : (Actor)hit.entity;
+        if (otherActor == null || faction != otherActor.faction)
+        {
+            SetActionDownTime(0.2f);
+
+            Vector3 knock = hit.knock.sqrMagnitude > 0.01f ? hit.knock : Vector3.up * 0.2f + transform.forward;
+            mover.Knock(knock);
+
+            if (health <= 1)
             {
-                health = 0;
-                Kill();
+                Kill(hit);
+            }
+            else
+            {
+                SetInvincibleFor(1.0f);
+                health -= hit.damage;
             }
         }
     }
 
-    public virtual void Kill() 
+    public void SetInvincibleFor(float time, bool muted = false)
     {
+        if (time > invincibleTime)
+        {
+            invincibleTime = Mathf.Max(time);
+            invincibleMuted = muted;
+        }
+    }
+
+    public void SetActionDownTime(float time)
+    {
+        actionDownTime = Mathf.Max(actionDownTime, time);
+        if (mover != null)
+        {
+            mover.SetDownTime(actionDownTime);
+        }
+    }
+
+    public virtual void Kill(EntityHit hit = null)
+    {
+        if (health <= 0)
+            return;
+
+        mover.enabled = false;
+        
         health = 0;
-        FXer.main.Fire(FXType.SmokePuff, transform.position + Vector3.up, 0.5f);
-        gameObject.SetActive(false);
+        EnableMovement(false);
+        //BaseCam.main.Shake(0.3f);
+
+        StartCoroutine(CoKill());
+    }
+
+    IEnumerator CoKill()
+    {
+        EnableMovement(false);
+        SetActionDownTime(1.0f);
+        yield return new WaitForSeconds(faction == Factions.main.GetFaction(1) ? 0.4f : 0.2f);
+
+        FXer.main.Fire(FXType.EnemyExplode, transform.position + Vector3.up, 0.5f);
         BaseCam.main.Shake(0.3f);
+        gameObject.SetActive(false);
 
         if (onKill != null)
         {
             onKill();
+        }
+        if (triggerOnKill != null)
+        {
+            triggerOnKill.FireTrigger();
         }
     }
 
@@ -150,7 +230,7 @@ public class Actor : Entity
         {
             //mover.enabled = enable;
         }
-        isMovementEnabled = enable;
+        enableMovement = enable;
     }
 
     public Actor SeekActor()

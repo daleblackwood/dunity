@@ -6,13 +6,15 @@ public class MaterialManager : MonoBehaviour
 {
     Dictionary<string, Material> materials = new Dictionary<string, Material>();
 
-    public static MaterialManager current { get; private set; }
+    public static MaterialManager main { get; private set; }
 
     public Material[] preloaded;
 
+    Dictionary<Material, int> animMats = new Dictionary<Material, int>();
+
     void Awake()
     {
-        current = this;
+        main = this;
         materials.Clear();
 
         foreach (var m in preloaded)
@@ -20,6 +22,16 @@ public class MaterialManager : MonoBehaviour
             string key = m.name.ToLower();
             materials[key] = m;
         }
+    }
+
+    public void AnimateTextureOffset(Material mat, Vector2 offset)
+    {
+        int lastFrame = animMats.ContainsKey(mat) ? animMats[mat] : 0;
+        if (lastFrame != Time.frameCount)
+        {
+            mat.mainTextureOffset += offset;
+        }
+        animMats[mat] = Time.frameCount;
     }
 
     public Material TextureMaterial(Texture texture, bool useLight, bool clamp)

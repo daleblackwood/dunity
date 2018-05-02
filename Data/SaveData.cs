@@ -173,6 +173,15 @@ public class SaveNode
         data[key] = new JSONBool(value);
     }
 
+    public void SetValue(string key, Vector3 value)
+    {
+        int x = Mathf.RoundToInt(value.x * 100);
+        int y = Mathf.RoundToInt(value.y * 100);
+        int z = Mathf.RoundToInt(value.z * 100);
+        var str = string.Format("{0},{1},{2}", x, y, z);
+        SetValue(key, str);
+    }
+
     public void SetChild(string key, SaveNode node)
     {
         EvalUtils.ParseToken(key);
@@ -209,6 +218,20 @@ public class SaveNode
         if (node == null)
             return "";
         return node.Value;
+    }
+
+    public Vector3 GetPosition(string key)
+    {
+        var str = GetString(key);
+        if (string.IsNullOrEmpty(str))
+            return default(Vector3);
+        var ords = str.Split(',');
+        var result = Vector3.zero;
+        if (ords.Length > 0) float.TryParse(ords[0], out result.x);
+        if (ords.Length > 1) float.TryParse(ords[1], out result.y);
+        if (ords.Length > 2) float.TryParse(ords[2], out result.z);
+        result /= 100.0f;
+        return result;
     }
 
     public SaveNode GetChild(string key)
