@@ -57,6 +57,7 @@ public class Player : GameBehaviour
                 actor.TakeHit(null);
                 if (actor.isAlive)
                 {
+                    actor.mover.Reset();
                     actor.transform.position = actor.mover.lastGroundPos;
                 }
             }

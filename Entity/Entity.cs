@@ -10,4 +10,22 @@ public class Entity : GameBehaviour
     public virtual void TakeHit(EntityHit hit = null) {}
 
     public virtual void OnSave() {}
+
+    public void Activate()
+    {
+        enabled = true;
+        if (gameObject.activeSelf == false)
+        {
+            gameObject.SetActive(true);
+        }
+    }
+
+    public void Deactivate()
+    {
+        enabled = false;
+        if (gameObject.activeSelf)
+        {
+            gameObject.SetActive(false);
+        }
+    }
 }

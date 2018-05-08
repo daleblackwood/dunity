@@ -24,6 +24,7 @@ public class GameStage : GameBehaviour, IStateHost
     protected List<Player> players = new List<Player>();
     protected List<Actor> actors = new List<Actor>();
     protected Entity[] allEntities = null;
+    public List<Entity> activeEntities { get; private set; }
 
     Dictionary<string, Actor[]> cacheFriends = new Dictionary<string, Actor[]>();
     Dictionary<string, Actor[]> cacheFoes = new Dictionary<string, Actor[]>();
@@ -35,6 +36,7 @@ public class GameStage : GameBehaviour, IStateHost
     {
         main = this;
         state = new StateMachine(this);
+        activeEntities = new List<Entity>();
         base.Awake();
     }
 
@@ -70,7 +72,7 @@ public class GameStage : GameBehaviour, IStateHost
 
         Spawn();
 
-        ReindexActors();
+        ReindexEntities();
         EnableMovement(true);
 
         base.OnReady();
@@ -93,6 +95,30 @@ public class GameStage : GameBehaviour, IStateHost
     public virtual void RestartStage()
     {
         StartStage();
+    }
+
+    public bool ShouldBeActive(Entity entity)
+    {
+        return Cambox.main == null || Cambox.main.IsInsideBounds(entity.transform.position);
+    }
+
+    public void ActivateEntity(Entity entity)
+    {
+        if (activeEntities.Contains(entity) == false)
+        {
+            activeEntities.Add(entity);
+        }
+
+        entity.Activate();
+    }
+
+    public void DeactivateEntity(Entity entity)
+    {
+        if (activeEntities.Contains(entity))
+        {
+            activeEntities.Remove(entity);
+        }
+        entity.Deactivate();
     }
 
     public void Register(Actor actor)
@@ -118,13 +144,32 @@ public class GameStage : GameBehaviour, IStateHost
         {
             UpdateCache();
         }
+
+        if (allEntities != null && allEntities.Length > 0)
+        {
+            for (int i = allEntities.Length - 1; i >= 0; i--)
+            {
+                var entity = allEntities[i];
+                bool shouldBeActive = ShouldBeActive(entity);
+                if (shouldBeActive && entity.enabled == false)
+                {
+                    ActivateEntity(entity);
+                }
+                else if (shouldBeActive == false && entity.enabled)
+                {
+                    DeactivateEntity(entity);
+                }
+            }
+        }
     }
 
-    void ReindexActors()
+    void ReindexEntities()
     {
-        var allActors = GameObject.FindObjectsOfType<Actor>();
-        foreach (var actor in allActors)
+        allEntities = GameObject.FindObjectsOfType<Entity>();
+        foreach (var entity in allEntities)
         {
+            var actor = entity as Actor;
+
             if (actor == null || actor.isActiveAndEnabled == false)
                 continue;
             

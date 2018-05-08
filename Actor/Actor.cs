@@ -52,10 +52,10 @@ public class Actor : Entity
     {
         actorCount++;
         index = actorCount;
-        mover = GetComponentInChildren<ActorMover>();
+        mover = GetComponentInChildren<ActorMover>(true);
         control = GetComponent<BaseControl>();
         player = GetComponentInParent<Player>();
-        head = GetComponentInChildren<ActorHead>();
+        head = GetComponentInChildren<ActorHead>(true);
         EnableMovement(false);
         base.OnInit();
     }
@@ -82,8 +82,11 @@ public class Actor : Entity
     {
         health = maxHealth;
         base.Reset();
-        mover.enabled = true;
-        mover.Reset();
+        if (mover != null)
+        {
+            mover.enabled = true;
+            mover.Reset();
+        }
         if (onReset != null)
         {
             onReset();
@@ -105,18 +108,6 @@ public class Actor : Entity
         if (isReady == false) 
             return;
 
-        if (control != null)
-        {
-            control.UpdateControl();
-        }
-        if (isMovementEnabled)
-        {
-            if (mover != null)
-            {
-                mover.UpdateActions(actions);
-            }
-        }
-
         if (isInvincible)
         {
             invincibleTime -= Time.deltaTime;
@@ -127,9 +118,21 @@ public class Actor : Entity
             actionDownTime -= Time.deltaTime;
         }
 
-        if (mover.inWater && waterAllergic)
+        if (control != null)
         {
-            Kill();
+            control.UpdateControl();
+        }
+
+        if (mover != null)
+        {
+            if (isMovementEnabled)
+            {
+                mover.UpdateActions(actions);
+            }
+            if (mover.inWater && waterAllergic)
+            {
+                Kill();
+            }
         }
     }
 
@@ -191,7 +194,10 @@ public class Actor : Entity
         if (health <= 0)
             return;
 
-        mover.enabled = false;
+        if (mover != null)
+        {
+            mover.enabled = false;
+        }
         
         health = 0;
         EnableMovement(false);

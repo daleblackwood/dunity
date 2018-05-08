@@ -126,7 +126,7 @@ public class StateMachine
         yield return host.StartCoroutine(stateCurrent.routine);
 
         CloseState(stateCurrent, StateInfo.Status.CompleteDefault);
-        host.PickState();
+        PickState();
     }
 
     void CloseState(StateInfo stateInfo, StateInfo.Status status)
@@ -174,7 +174,15 @@ public class StateMachine
 
     void PickState()
     {
-        host.PickState();
+        if (IsHostActive())
+        {
+            host.PickState();
+        }
+    }
+
+    bool IsHostActive()
+    {
+        return hostMono != null && hostMono.isActiveAndEnabled;
     }
 
     void PickNext(System.Action pickAction = null)
@@ -186,7 +194,10 @@ public class StateMachine
         }
         CloseState(stateCurrent, StateInfo.Status.CompletePick);
         host.StopAllCoroutines();
-        host.StartCoroutine(PickNextFrame(pickAction));
+        if (IsHostActive())
+        {
+            host.StartCoroutine(PickNextFrame(pickAction));
+        }
     }
 
     IEnumerator PickNextFrame(System.Action pickAction)

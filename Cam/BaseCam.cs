@@ -240,6 +240,8 @@ public abstract class BaseCam : MonoBehaviour
     {
         foreach (var cam in otherCams)
         {
+            if (cam == null)
+                continue;
             cam.enabled = cam == main;
         }
     }
