@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using WorldBlocks;
+using SerializableCollections;
 
 public class WorldBlockInverted : WorldBlock
 {
