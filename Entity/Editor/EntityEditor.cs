@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
+[CanEditMultipleObjects]
 [CustomEditor(typeof(Entity), true)]
 public class EntityEditor : Editor
 {

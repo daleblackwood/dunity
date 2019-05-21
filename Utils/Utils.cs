@@ -107,6 +107,15 @@ public class Utils
         Remove(component.gameObject, immediate);
     }
 
+    static public void RemoveComponent<T>(GameObject gameObject) where T : Component
+    {
+        var comp = gameObject.GetComponent<T>();
+        if (comp != null)
+        {
+            GameObject.Destroy(comp);
+        }
+    }
+
     static public void Replace(GameObject original, GameObject target, bool remove)
     {
         target.transform.parent = original.transform.parent;
@@ -156,6 +165,21 @@ public class Utils
         return false;
     }
 
+    static public T[] GetChildComponents<T>(Transform parent) where T : Component
+    {
+        var list = new List<T>();
+        for (int i=0; i<parent.childCount; i++)
+        {
+            var child = parent.GetChild(i);
+            var childComp = child.GetComponent<T>();
+            if (childComp != null)
+            {
+                list.Add(childComp);
+            }
+        }
+        return list.ToArray();
+    }
+
     static public T GetClosest<T>(T[] components, Vector3 position) where T : Component
     {
         if (components == null || components.Length < 1)
@@ -193,5 +217,14 @@ public class Utils
     static public bool WithinDistance(Vector3 a, Vector3 b, float distance)
     {
         return (b - a).sqrMagnitude < distance * distance;
+    }
+
+    static public void SetLayer(GameObject gameObject, int layer)
+    {
+        gameObject.layer = layer;
+        foreach (Transform child in gameObject.transform)
+        {
+            SetLayer(child.gameObject, layer);
+        }
     }
 }

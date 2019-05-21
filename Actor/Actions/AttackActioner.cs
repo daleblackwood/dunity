@@ -9,6 +9,7 @@ public class AttackActioner : BaseActioner
 
     protected override void OnEnable()
     {
+        actionType = ActionType.Attack;
         ActivateObjects(false);
         base.OnEnable();
     }
@@ -29,22 +30,36 @@ public class AttackActioner : BaseActioner
                 return;
             }
 
-            var cat = actor.targetActor.GetComponent<ContextActionTrigger>();
-            if (cat != null)
+            var actionTrigger = actor.targetActor.GetComponent<ContextActionTrigger>();
+            if (actor.CanTriggerContextAction(actionTrigger))
             {
-                cat.Trigger();
+                actor.TriggerContextAction(actor.targetActor);
             }
+        }
+        else
+        {
+            Attack();
         }
     }
 
-    void Attack()
+    public virtual void Attack()
     {
         actor.SetInvincibleFor(0.2f, true);
         attackCount++;
         var trigger = attackCount % 2 == 0 ? "AttackFore" : "AttackBack";
         mover.animator.SetTrigger(trigger);
         mover.SetDownTime(coolDownTime);
-        ActivateObjects(true);
+
+        /*
+        Sword sword = actor.item as Sword;
+        if (sword != null)
+        {
+            if (sword.swordType != SwordType.Nothing)
+            {
+                ActivateObjects(true);
+            }
+        }
+         */
     }
 
     protected override void OnCooldown()

@@ -22,6 +22,19 @@ public class Faction : ScriptableObject
 
     public string GetKey()
     {
-        return name.ToLower();
+        return ToKey(name);
+    }
+
+    public bool Compare(string otherName)
+    {
+        return ToKey(name) == ToKey(otherName);
+    }
+
+    string ToKey(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+            return "";
+
+        return s.ToLower().Trim();
     }
 }

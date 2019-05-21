@@ -49,7 +49,7 @@ public class CamOrbit : MonoBehaviour
         {
             bool orbiting = true;
 
-            if (EventSystem.current.currentSelectedGameObject != null)
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
             {
                 orbiting = false;
             }

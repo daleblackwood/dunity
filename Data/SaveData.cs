@@ -7,6 +7,7 @@ using SimpleJSON;
 public class SaveData : MonoBehaviour
 {
     static public SaveData main { get; private set; }
+    static public int saveCount { get; private set; }
 
     public class GameData : SaveNode
     {
@@ -31,7 +32,13 @@ public class SaveData : MonoBehaviour
 
         public StageData GetStageData(GameStage stage)
         {
-            return GetChild<StageData>(stage.saveKey);
+            var result = GetChild<StageData>(stage.saveKey);
+            if (result == null)
+            {
+                result = new StageData();
+                SetChild(stage.saveKey, result);
+            }
+            return result;
         }
 
         public void SetStageData(GameStage stage)
@@ -45,6 +52,17 @@ public class SaveData : MonoBehaviour
         public string spawnPoint { 
             get { return GetString("LAST_DOOR"); }
             set { SetValue("LAST_DOOR", value); }
+        }
+
+        public void SetTriggered(Entity entity, bool collected)
+        {
+            SetValue(entity.saveKey, collected);
+        }
+
+        public bool IsTriggered(Entity entity)
+        {
+            var result = GetBool(entity.saveKey);
+            return result;
         }
     }
 
@@ -76,6 +94,7 @@ public class SaveData : MonoBehaviour
         var key = EvalUtils.ParseToken("SAVE_" + slot);
         var path = SavePath + "/" + key + ".SAV";
         var json = game.data;
+        saveCount++;
         TextWrite(path, json.ToString());
     }
 
@@ -117,6 +136,11 @@ public class SaveData : MonoBehaviour
         {
             game = new GameData();  
         }
+    }
+
+    public void Clear(int loadSlot = SAVE_SLOT_DEV)
+    {
+        SaveGameData(loadSlot, new GameData());
     }
 
     public void Save()
@@ -184,7 +208,7 @@ public class SaveNode
 
     public void SetChild(string key, SaveNode node)
     {
-        EvalUtils.ParseToken(key);
+        key = EvalUtils.ParseToken(key);
         data[key] = node.data;
     }
 
@@ -257,6 +281,7 @@ public class SaveNode
 
     JSONNode GetNode(string key)
     {
+        key = EvalUtils.ParseToken(key);
         var node = (JSONNode)data;
         do
         {

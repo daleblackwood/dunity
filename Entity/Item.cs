@@ -30,12 +30,6 @@ public class Item : Entity
     ItemCollector collector = null;
     float collectSpeed = 0.0f;
 
-    protected override void Awake()
-    {
-        isTargetable = true;
-        base.Awake();
-    }
-
     public void Collect(ItemCollector collector)
     {
         if (timeSinceReady < 1.5f)

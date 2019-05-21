@@ -22,6 +22,15 @@ public class StagePortal : MonoBehaviour
         if (player == null)
             return;
 
+        var playerVel = player.actor.mover.velocity;
+        playerVel.y = 0.0f;
+        if (playerVel.sqrMagnitude < 0.1f)
+            return;
+
+        var dot = Vector3.Dot(playerVel.normalized, transform.forward);
+        if (dot > -0.5f)
+            return;
+
         var loadStage = stageName;
         if (string.IsNullOrEmpty(loadStage) && string.IsNullOrEmpty(doorName) && SaveData.main.game != null)
         {

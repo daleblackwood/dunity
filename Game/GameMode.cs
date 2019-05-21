@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public abstract class GameMode : GameBehaviour, IStateHost
 {
-    static public GameMode main { get; private set; }
+    static public GameMode main { get; set; }
   
     public StateMachine state { get; private set; }
 
@@ -32,7 +32,7 @@ public abstract class GameMode : GameBehaviour, IStateHost
 
     public void PickState()
     {
-        state.SetState(null, null);
+        state.SetState(null);
     }
 
     protected IEnumerator CoDiscoverPlayers()

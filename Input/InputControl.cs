@@ -1,13 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using InControl;
 
 public class InputControl : BaseControl
 {
     InputDevice device = null;
-    PartyActionSet actionSet = null;
-    TouchInput touch = null;
+    //PartyActionSet actionSet = null;
+    //TouchInput touch = null;
 
     public void DebugAssign()
     {
@@ -20,8 +19,8 @@ public class InputControl : BaseControl
         base.Reset();
         int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
         device = ControlManager.main.GetDevice(index);
-        actionSet = new PartyActionSet();
-        actionSet.Device = device;
+        //actionSet = new PartyActionSet();
+        //actionSet.Device = device;
     }
 
     protected override void UpdateActions()
@@ -30,9 +29,10 @@ public class InputControl : BaseControl
 
         if (device != null)
         {
-            actionSet.UpdateActions(actions);
+            device.UpdateActions(actions);
         }
 
+        /*
         int index = actor is Actor ? ((Actor)actor).playerIndex : -1;
         if (index == 0)
         {
@@ -72,5 +72,6 @@ public class InputControl : BaseControl
             actions.primary |= Input.GetKey(KeyCode.Space);
             actions.secondary |= Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.Z);
         }
+         */
     }
 }

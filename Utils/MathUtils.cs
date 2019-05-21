@@ -15,6 +15,12 @@ public static class MathUtils
         return Mathf.Clamp01(1.0f - Mathf.Pow(1.0f - sharpness, Time.fixedDeltaTime * EASE_FRAME_MAGNIFY));
     }
 
+    public static float ClampAbs(float value, float clamp)
+    {
+        clamp = Mathf.Abs(clamp);
+        return Mathf.Clamp(value, -clamp, clamp);
+    }
+
     public static float PowLazy(float value, float exponent)
     {
         long tmp = System.Convert.ToInt64((double)value);

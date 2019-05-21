@@ -26,15 +26,13 @@ public class PlatformSensor
         this.mover = mover;
         transform = mover.transform;
         collider = mover.GetComponent<Collider>();
-        layerCast = ActorMover.GetCastMask();
-        layerOneWay = LayerMask.NameToLayer("OneWay");
     }
 
     public void Update()
     {
         Cast(out hitUp, transform.forward * 1.0f, Vector3.up, 3.5f);
         isUnderPlatform = hitUp.collider != null;
-        isUnderOneWayPlatform = hitUp.collider != null && hitUp.collider.gameObject.layer == layerOneWay;
+        isUnderOneWayPlatform = hitUp.collider != null && hitUp.collider.gameObject.layer == Layers.OneWay;
 
         Cast(out hitUpHigh, transform.forward * 1.0f, Vector3.up, 6.0f);
         isWellUnderPlatform = hitUpHigh.collider != null;

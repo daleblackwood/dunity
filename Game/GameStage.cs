@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Plavatar;
 
-public class GameStage : GameBehaviour, IStateHost
+public class GameStage : MonoBehaviour, IStateHost
 {
     static public GameStage main { get; private set; }
 
@@ -25,39 +25,42 @@ public class GameStage : GameBehaviour, IStateHost
     protected List<Actor> actors = new List<Actor>();
     protected Entity[] allEntities = null;
     public List<Entity> activeEntities { get; private set; }
+    public bool hasInited { get; private set; }
 
     Dictionary<string, Actor[]> cacheFriends = new Dictionary<string, Actor[]>();
     Dictionary<string, Actor[]> cacheFoes = new Dictionary<string, Actor[]>();
-    Actor[] cacheActors = null;
+    Actor[] allActors = null;
 
     bool isDirtyCache = false;
 
-    protected override void Awake()
+    protected virtual void Awake()
     {
         main = this;
         state = new StateMachine(this);
         activeEntities = new List<Entity>();
-        base.Awake();
     }
 
-    protected override void OnInit()
+    protected virtual void OnEnable()
     {
         main = this;
-        Game.MakeReady();
-        base.OnInit();
+        Game.StageReady(OnStageReady);
     }
 
-    protected override void OnEnable()
+    void OnStageReady()
     {
-        main = this;
-        base.OnEnable();
+        if (hasInited == false)
+        {
+            OnInit();
+            hasInited = true;
+        }
+        OnReady();
     }
 
-    public virtual void Spawn()
-    {
-    }
+    protected virtual void OnInit(){}
 
-    protected override void OnReady()
+    public virtual void Reset(){}
+
+    protected virtual void OnReady()
     {
         if (SaveData.main.game == null)
         {
@@ -75,8 +78,6 @@ public class GameStage : GameBehaviour, IStateHost
         ReindexEntities();
         EnableMovement(true);
 
-        base.OnReady();
-
         var gbs = GameObject.FindObjectsOfType<GameBehaviour>();
         foreach (var gb in gbs)
         {
@@ -84,6 +85,10 @@ public class GameStage : GameBehaviour, IStateHost
         }
 
         StartStage();
+    }
+
+    public virtual void Spawn()
+    {
     }
 
     public virtual void StartStage()
@@ -99,7 +104,16 @@ public class GameStage : GameBehaviour, IStateHost
 
     public bool ShouldBeActive(Entity entity)
     {
-        return Cambox.main == null || Cambox.main.IsInsideBounds(entity.transform.position);
+        if (Cambox.main == null)
+            return true;
+
+        if (entity.CompareTag("Persistant"))
+            return true;
+            
+        if (Cambox.main.IsInsideBounds(entity.transform.position))
+            return true;
+
+        return false;
     }
 
     public void ActivateEntity(Entity entity)
@@ -150,6 +164,9 @@ public class GameStage : GameBehaviour, IStateHost
             for (int i = allEntities.Length - 1; i >= 0; i--)
             {
                 var entity = allEntities[i];
+                if (entity == null)
+                    continue;
+                
                 bool shouldBeActive = ShouldBeActive(entity);
                 if (shouldBeActive && entity.enabled == false)
                 {
@@ -180,7 +197,7 @@ public class GameStage : GameBehaviour, IStateHost
 
     void UpdateCache()
     {
-        cacheActors = NO_ACTORS;
+        allActors = NO_ACTORS;
         cacheFriends.Clear();
         cacheFoes.Clear();
 
@@ -220,10 +237,10 @@ public class GameStage : GameBehaviour, IStateHost
             listFriends[factionKey].Add(actor);
         }
 
-        cacheActors = listActors.ToArray();
+        allActors = listActors.ToArray();
 
         // list foes
-        foreach (var actor in actors)
+        foreach (var actor in allActors)
         {
             if (actor.faction == null)
                 continue;
@@ -255,7 +272,7 @@ public class GameStage : GameBehaviour, IStateHost
 
     public virtual void PickState()
     {
-        state.SetState("Null", null);
+        state.SetState(null);
     }
 
     protected void SetPlaying(bool enable)
@@ -326,16 +343,19 @@ public class GameStage : GameBehaviour, IStateHost
         isMovementEnabled = enable;
     }
 
-    public bool IsActionPressed()
+    public bool isActionPressed
     {
-        foreach (var player in players)
+        get
         {
-            if (player.IsActionPressed())
+            foreach (var player in players)
             {
-                return true;
+                if (player.actor.isActionPressed)
+                {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 
     public Player[] GetPlayers()
@@ -353,10 +373,10 @@ public class GameStage : GameBehaviour, IStateHost
 
     public Actor[] GetActors()
     {
-        if (cacheActors == null || cacheActors.Length < 1)
+        if (allActors == null || allActors.Length < 1)
             return NO_ACTORS;
         
-        return cacheActors;
+        return allActors;
     }
 
     public Actor[] GetFriends(Faction faction)

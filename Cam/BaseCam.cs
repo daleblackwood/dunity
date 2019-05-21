@@ -9,8 +9,10 @@ public abstract class BaseCam : MonoBehaviour
     public Transform[] targets;
     public Transform camBoxParent;
     public float camboxPadding = 0.0f;
+    public bool camboxEnforced = false;
     public float fieldOfView = 30.0f;
-
+    
+    public Vector3 worldViewport { get; private set; }
     protected Bounds targetBounds;
     protected Vector3 targetPos;
     protected Camera cam = null;
@@ -24,6 +26,7 @@ public abstract class BaseCam : MonoBehaviour
     protected Dictionary<Transform, ActorMover> movers = new Dictionary<Transform, ActorMover>();
 
     BaseCam[] otherCams = null;
+    Bounds appliedBounds;
 
     protected virtual void OnEnable()
     {
@@ -67,6 +70,10 @@ public abstract class BaseCam : MonoBehaviour
     {
         if (Game.isReady == false)
             return;
+
+        float yFactor = (float)Screen.height / (float)Screen.width;
+        yFactor *= 1.5f;
+        worldViewport = new Vector3(1.0f, 0, yFactor) * camboxPadding * 2.0f;
         
         if (targets == null || targets.Length < 1)
         {
@@ -141,17 +148,36 @@ public abstract class BaseCam : MonoBehaviour
             var bounds = new Bounds();
             var isSet = false;
             var inAvoid = false;
+            var closestWithin = false;
             float closest2 = float.PositiveInfinity;
+            float closestCenter2 = float.PositiveInfinity;
             foreach (var cb in camBounds)
             {
                 var p = cb.ClosestPoint(position);
-                var dist2 = (position - p).sqrMagnitude;
-                if (isSet && dist2 > closest2)
-                    continue;
+                var dif = position - p;
+                dif.y = 0.0f;
+                var dist2 = dif.sqrMagnitude;
+                var center2 = (position - cb.center).sqrMagnitude;
+                var thisWithin = dist2 < 0.1f;
+                if (closestWithin)
+                {
+                    if (thisWithin == false)
+                        continue;
+                        
+                    if (thisWithin && center2 > closestCenter2)
+                        continue;
+                }
+                else
+                {
+                    if (isSet && dist2 > closest2)
+                        continue;
+                }
 
+                closestCenter2 = center2;
                 closest2 = dist2;
                 bounds = cb;
                 isSet = true;
+                closestWithin = thisWithin;
             }
 
             foreach (var cb in camAvoids)
@@ -163,7 +189,7 @@ public abstract class BaseCam : MonoBehaviour
                 }
             }
 
-            if (bounds.Contains(position) == false && inAvoid == false)
+            if (bounds.Contains(position) == false && inAvoid == false && camboxEnforced == false)
             {
                 return position;
             }
@@ -183,8 +209,10 @@ public abstract class BaseCam : MonoBehaviour
                 bounds.min = min;
                 bounds.max = max;
 
-                DebugTools.DrawCube(bounds, Color.blue);
-                position = bounds.ClosestPoint(position);
+                //appliedBounds.min = Vector3.Lerp(appliedBounds.min, bounds.min, MathUtils.DeltaEase(0.1f));
+                //appliedBounds.max = Vector3.Lerp(appliedBounds.max, bounds.max, MathUtils.DeltaEase(0.1f));
+                appliedBounds = bounds;
+                position = appliedBounds.ClosestPoint(position);
             }
         }
         return position;
@@ -244,5 +272,21 @@ public abstract class BaseCam : MonoBehaviour
                 continue;
             cam.enabled = cam == main;
         }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        var pos = targetPos;
+
+        var min = pos - worldViewport * 0.5f;
+        var max = min + worldViewport;
+        DebugTools.DrawCube(min, max, Color.red);
+
+        DebugTools.DrawCube(appliedBounds, Color.blue);
+
+        min = appliedBounds.min - worldViewport * 0.5f;
+        max = appliedBounds.max + worldViewport * 0.5f;
+        DebugTools.DrawCube(min, max, Color.blue);
+
     }
 }

@@ -5,6 +5,7 @@ using UnityEngine;
 public class ObjectsInactiveTrigger : BaseTrigger 
 {
     public GameObject[] objects;
+    [Range(0.0f, 2.0f)] public float delay = 0.5f;
 
     public bool complete = false;
     float triggerTime = 0.0f;
@@ -31,7 +32,7 @@ public class ObjectsInactiveTrigger : BaseTrigger
         if (active == 0 && complete == false)
         {
             completeTime += Time.unscaledDeltaTime;
-            if (completeTime > 0.5f)
+            if (completeTime > delay)
             {
                 complete = true;
                 Trigger();

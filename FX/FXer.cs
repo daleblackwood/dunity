@@ -18,6 +18,7 @@ public enum FXType
     //BigDust,
     EnemyExplode,
     HitSmack,
+    LavaDrop,
     MAX
 }
 
@@ -57,8 +58,13 @@ public class FXer : MonoBehaviour
 
     public FXInstance Fire(FXType fxType, Vector3 positon, float scale = 1.0f)
     {
+        if (parent == null)
+        {
+            Clear();
+        }
+
         var instance = NextInstance(fxType);
-        instance.transform.SetParent(parent);
+        instance.transform.SetParent(parent, false);
         instance.transform.position = positon;
         instance.transform.localScale = Vector3.one * scale;
         instance.transform.localRotation = Quaternion.identity;

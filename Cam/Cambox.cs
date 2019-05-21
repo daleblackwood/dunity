@@ -37,6 +37,12 @@ public class Cambox : GameBehaviour
         return collider.bounds.Contains(position);
     }
 
+    public bool IsInsideBoundsXZ(Vector3 position)
+    {
+        position.y = collider.bounds.center.y;
+        return IsInsideBounds(position);
+    }
+
     void OnTriggerEnter(Collider other)
     {
         var entity = other.GetComponent<Entity>();

@@ -19,6 +19,7 @@ public class StateInfo
     public float time { get { return (isComplete ? endTime : StateMachine.LocalTime ) - startTime; } }
     public bool isComplete { get { return status > Status.Running; } }
     public IEnumerator routine = null;
+    public System.Func<IEnumerator> method = null;
     public Status status = Status.Init;
 
     public StateInfo(string name)
@@ -49,7 +50,7 @@ public class StateMachine
         hostMono = (MonoBehaviour)host;
     }
 
-    public StateInfo SetState(string name, IEnumerator routine)
+    public StateInfo SetState(System.Func<IEnumerator> routineMethod, string methodName = null)
     {
         // close unfinished states
         if (stateCurrent != null)
@@ -64,15 +65,17 @@ public class StateMachine
         stack[0] = stateCurrent;
 
         StateInfo stateInfo = null;
-        if (routine == null)
+        if (routineMethod == null)
         {
             stateInfo = NullState;
         }
         else
         {
-            stateInfo = new StateInfo(name);
+            var routineName = methodName == null ? routineMethod.Method.Name : methodName;
+            stateInfo = new StateInfo(routineName);
+            stateInfo.method = routineMethod;
+            stateInfo.routine = routineMethod();
             stateInfo.startTime = LocalTime;
-            stateInfo.routine = routine;
             stateInfo.status = StateInfo.Status.Init;
         }
 
@@ -114,7 +117,7 @@ public class StateMachine
 
         if (stateCurrent == null)
         {
-            SetState("AutoIdle", StateIdle());
+            SetState(StateIdle);
         }
 
         while (stateCurrent.routine == null)

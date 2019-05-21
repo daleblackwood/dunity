@@ -23,7 +23,7 @@ public class UIManager : MonoBehaviour
         canvas = GetComponent<Canvas>();
         canvasRect = canvas.GetComponent<RectTransform>();
 
-        SwitchTo<UIScreenLoad>(true);
+        //SwitchTo<UIScreenLoad>(true);
     }
 
     void Index()
@@ -101,6 +101,12 @@ public class UIManager : MonoBehaviour
         {
             SnapAll();
         }
+    }
+
+    public void Overlay<T>() where T : UIScreen
+    {
+        var screen = GetScreen<T>();
+        Overlay(screen);
     }
 
     public void Overlay(UIScreen screen)

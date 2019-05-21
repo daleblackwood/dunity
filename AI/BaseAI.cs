@@ -4,19 +4,12 @@ using Behave;
 
 public abstract class BaseAI : BaseControl
 {
-    protected GameStage gameStage { get; private set; }
 
     public Vector3 targetPos = Vector3.zero;
     Vector3 lerpedTargetPos = Vector3.zero;
 
     public override void Reset()
     {
-        gameStage = GameStage.main;
-        if (gameStage == null)
-        {
-            Debug.LogError("AI couldn't find game.");
-            return;
-        }
         targetPos = Vector3.zero;
 
         Game.WhenReady(OnReady);
@@ -62,7 +55,7 @@ public abstract class BaseAI : BaseControl
 
         if (Application.isEditor)
         {
-            var color = actor.faction.color;
+            var color = actor.faction ? actor.faction.color : Color.grey;
             Debug.DrawLine(transform.position + Vector3.up * 0.5f, lerpedTargetPos + Vector3.up * 0.5f, color);
             DebugTools.DrawSphere(lerpedTargetPos + Vector3.up * 0.5f, color, 0.5f);
         }

@@ -7,18 +7,18 @@ public class Game : MonoBehaviour
 {
     static public Game main { get; private set; }
 
-    static System.Action readyActions = null;
+    static List<System.Action> readyActions = new List<System.Action>();
     static public void WhenReady(System.Action onReady)
     {
-        readyActions += onReady;
+        readyActions.Add(onReady);
     }
 
     static bool loadCalled = false;
-    static public void MakeReady(System.Action onReady = null)
+    static public void StageReady(System.Action onReady = null)
     {
         if (onReady != null)
         {
-            WhenReady(onReady);
+            readyActions.Insert(0, onReady);
         }
 
         if (main == null && loadCalled == false)
@@ -56,14 +56,21 @@ public class Game : MonoBehaviour
         if (main == null)
             return;
 
-        if (readyActions != null)
+        if (readyActions.Count > 0)
         {
-            readyActions();
-            readyActions = null;
+            var ra = readyActions.ToArray();
+            readyActions.Clear();
+            foreach (var action in ra)
+            {
+                if (action == null || action.Target == null)
+                    continue;
+
+                action.Invoke();
+            }
         }
     }
 
-    public string sceneName = null;
+    public string sceneName { get; private set; }
     public GameMode gameMode { get; private set; }
     public GameStage gameStage { get; private set; }
     public string[] sceneNames = null;
@@ -90,7 +97,10 @@ public class Game : MonoBehaviour
             {
                 modes[mode.GetType().Name] = mode;
             }
-            defaultMode = allModes[0];
+            if (defaultMode == null)
+            {
+                defaultMode = allModes[0];
+            }
         }
 
         if (string.IsNullOrEmpty(sceneName))
@@ -108,13 +118,17 @@ public class Game : MonoBehaviour
         }
 
         DontDestroyOnLoad(gameObject);
+
+        if (isDevelopment)
+        {
+            SetGameMode<DevMode>();
+        }
     }
 
     void Start()
     {
         if (isDevelopment)
         {
-            SetGameMode<DevMode>();
             LoadSceneComplete();
         }
         else
@@ -199,9 +213,17 @@ public class Game : MonoBehaviour
         {
             var loadScreen = GameMode.main.loadScreen;
             UIManager.main.SwitchTo(loadScreen);
-        }
 
-        yield return new WaitForSeconds(0.5f);
+            do 
+            {
+                yield return null;
+            }
+            while (loadScreen.state == UIScreen.State.Showing);
+        }
+        else
+        {
+            yield return new WaitForSeconds(0.5f);
+        }
 
         sceneName = nextSceneName;
         SceneManager.LoadScene(sceneName);
@@ -213,8 +235,9 @@ public class Game : MonoBehaviour
 
     void LoadSceneComplete()
     {
-        isReady = true;
         gameStage = GameObject.FindObjectOfType<GameStage>();
+        
+        isReady = true;
 
         if (onNextLoadComplete != null)
         {
@@ -222,7 +245,7 @@ public class Game : MonoBehaviour
         }
     }
 
-    public void SetGameMode<T>() where T : GameMode
+    public void SetGameMode<T>(bool startMode = true) where T : GameMode
     {
         var modeKey = typeof(T).Name;
         if (modes.ContainsKey(modeKey) == false)
@@ -230,10 +253,10 @@ public class Game : MonoBehaviour
             throw new UnityException("Can't switch to mode " + modeKey);
         }
 
-        SetGameMode(modes[modeKey]);
+        SetGameMode(modes[modeKey], startMode);
     }
 
-    void SetGameMode(GameMode newMode)
+    void SetGameMode(GameMode newMode, bool startMode = true)
     {
         gameMode = newMode;
 
@@ -249,7 +272,11 @@ public class Game : MonoBehaviour
         }
 
         gameMode.gameObject.SetActive(true);
-        gameMode.StartMode();
+        GameMode.main = gameMode;
+        if (startMode)
+        {
+            gameMode.StartMode();
+        }
     }
         
     public void ToggleSound()

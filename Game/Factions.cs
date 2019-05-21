@@ -37,15 +37,26 @@ public class Factions : MonoBehaviour
 
         return factions[index];
     }
+    
+    public Faction GetFaction(string factionName)
+    {
+        var index = GetFactionIndex(factionName);
+        return GetFaction(index);
+    }
 
-    public int GetFactionIndex(Faction faction)
+    public int GetFactionIndex(string factionName)
     {
         for (int i=0; i<factions.Length; i++)
         {
-            if (factions[i].name == faction.name)
+            if (factions[i].Compare(factionName))
                 return i;
         }
         return -1;
+    }
+    
+    public int GetFactionIndex(Faction faction)
+    {
+        return GetFactionIndex(faction.name);
     }
 
     public Faction[] GetOpposing(int index)
@@ -59,5 +70,17 @@ public class Factions : MonoBehaviour
             result.Add(factions[i]);
         }
         return result.ToArray();
+    }
+
+    public Faction[] GetOpposing(string factionName)
+    {
+        var index = GetFactionIndex(factionName);
+        return GetOpposing(index);
+    }
+
+    public Faction[] GetOpposing(Faction faction)
+    {
+        var index = GetFactionIndex(faction);
+        return GetOpposing(index);
     }
 }

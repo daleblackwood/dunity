@@ -18,6 +18,10 @@ public class ItemHolder : MonoBehaviour
 
     void Update()
     {
+        if (item == null)
+        {
+            return;
+        }
         item.transform.localPosition = Vector3.zero;
         item.transform.localRotation = Quaternion.identity;
         item.transform.localScale = Vector3.one;
@@ -31,10 +35,12 @@ public class ItemHolder : MonoBehaviour
             item = null;
         }
 
-        newItem.gameObject.SetActive(false);
-
-        item = Utils.InstantiateInto(newItem, transform);
-        item.gameObject.SetActive(true);
+        if (newItem != null)
+        {
+            newItem.gameObject.SetActive(false);
+            item = Utils.InstantiateInto(newItem, transform);
+            item.gameObject.SetActive(true);
+        }
 
         if (OnItemChange != null)
         {

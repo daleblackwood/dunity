@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using InControl;
 
 public class ControlManager : GameBehaviour 
 {
@@ -97,15 +96,15 @@ public class ControlManager : GameBehaviour
 
     void UpdateDiscovery()
     {
-        foreach (var device in InputManager.Devices)
+        foreach (var device in InputManager.main.devices)
         {
-            if (device.IsAttached == false)
+            if (device.isAttached == false)
                 continue;
 
             if (devices.Contains(device))
                 continue;
 
-            if (device.AnyButtonIsPressed)
+            if (device.anyButtonIsPressed)
             {
                 devices.Add(device);
                 if (devices.Count >= 4)
@@ -119,9 +118,9 @@ public class ControlManager : GameBehaviour
 
     public void AddDefaultDevice()
     {
-        foreach (var device in InputManager.Devices)
+        foreach (var device in InputManager.main.devices)
         {
-            if (device.IsAttached == false)
+            if (device.isAttached == false)
                 continue;
 
             if (devices.Contains(device))
@@ -148,7 +147,7 @@ public class ControlManager : GameBehaviour
             return null;
 
         var device = devices[index];
-        if (device == null || device.IsAttached == false)
+        if (device == null || device.isAttached == false)
             return null;
 
         return device;

@@ -18,6 +18,7 @@ public class UIScreen : MonoBehaviour
     public State state;
     public bool isGameScreen = false;
     public bool isPersistant = false;
+    public bool useTransition = true;
     public bool isShowing { get { return state >= State.Showing && state <= State.On; } }
     public float screenTime { get { return Time.unscaledTime - showTime; } }
     public System.Action onShow = null;
@@ -34,10 +35,9 @@ public class UIScreen : MonoBehaviour
 
     public void Show()
     {
-        gameObject.SetActive(true);
-
         state = State.Showing;
         showTime = Time.unscaledTime;
+        gameObject.SetActive(true);
 
         OnShow();
 
@@ -55,13 +55,11 @@ public class UIScreen : MonoBehaviour
             EventSystem.current.SetSelectedGameObject(button.gameObject);
             break;
         }
-
-        //ShowDebug(transform, Game.IsDebug());
     }
 
     protected virtual void OnShow()
     {
-        Vector3 pos = GetOffset(1);
+        Vector3 pos = useTransition ? GetOffset(1) : GetOffset(0);
         transform.localPosition = pos;
     }
 

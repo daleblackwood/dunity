@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public class Player : GameBehaviour
@@ -7,21 +8,22 @@ public class Player : GameBehaviour
     int lastIndex = -2;
     public Actor actor { get; private set; }
     public Actor targetContext { get; private set; }
-    public ContextActionTrigger[] contexActions = null;
+    public ContextActionTrigger contextAction = null;
     float waterTimeRemaining = 2.0f;
     public float maxWaterTime = 10.0f;
-    UIProgressMeterer meterer = null;
+    //UIProgressMeterer meterer = null;
 
     override protected void OnInit()
     {
         actor = GetComponentInChildren<Actor>();
         actor.onKill = OnKill;
         actor.onReset = OnReset;
+        gameObject.tag = "Persistant";
     }
 
     protected override void OnFirstReady()
     {
-        meterer = UIManager.main.GetComponentInChildren<UIProgressMeterer>(true);
+        //meterer = UIManager.main.GetComponentInChildren<UIProgressMeterer>(true);
     }
 
     void Update()
@@ -39,18 +41,25 @@ public class Player : GameBehaviour
         if (actor.targetContext != targetContext)
         {
             targetContext = actor.targetContext;
-            contexActions = targetContext == null ? null : targetContext.GetComponents<ContextActionTrigger>();
         }
+
+        bool canUse = false;
+        if (targetContext != null)
+        {
+            canUse = actor.CanTriggerContextAction(targetContext.contextTrigger);
+        }
+        contextAction = canUse ? targetContext.contextTrigger : null;
 
         if (actor.mover.inWater && actor.isAlive)
         {
             float waterPC = Mathf.Clamp01(actor.mover.timeInWater / maxWaterTime);
 
+            /*
             if (meterer != null)
             {
                 meterer.ShowProgress(transform, actor.faction.color, Mathf.Clamp01(1.0f - waterPC * 1.1f));
             }
-
+             */
             if (waterPC >= 1.0f)
             {
                 //actor.Kill();
@@ -70,14 +79,14 @@ public class Player : GameBehaviour
 
     void OnKill()
     {
-        GameMode.main.Respawn();
+        GameStage.main.StartCoroutine(CoKill());
     }
 
-    public bool IsActionPressed()
+    IEnumerator CoKill()
     {
-        if (actor == null || actor.actions == null)
-            return false;
-
-        return actor.actions.primary || actor.actions.secondary;
+        gameObject.SetActive(false);
+        yield return new WaitForSecondsRealtime(1.0f);
+        //GameMode.main.Respawn();
+        GameMode.main.Reload();
     }
 }

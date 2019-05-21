@@ -105,4 +105,14 @@ public static class EditorTools
         SaveData.SaveGameData(SaveData.SAVE_SLOT_DEV, new SaveData.GameData());
         SaveData.LoadGameData(SaveData.SAVE_SLOT_DEV);
     }
+
+    [MenuItem("Tools/Clear All Saves")]
+    static void ClearSaves()
+    {
+        for (int i = -1; i <= 3; i++)
+        {
+            SaveData.SaveGameData(i, new SaveData.GameData());
+            SaveData.LoadGameData(SaveData.SAVE_SLOT_DEV);
+        }
+    }
 }

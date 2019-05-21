@@ -75,7 +75,10 @@ public class SequenceManager : MonoBehaviour
         //Game.main.ui.ToGame();
         //Game.main.player.inputEnabled = true;
         TimeManager.main.Reset();
-        BaseCam.main.SwitchToDefault();
+        if (BaseCam.main != null)
+        {
+            BaseCam.main.SwitchToDefault();
+        }
         allowAdd = true;
 
         if (onComplete != null)
@@ -196,6 +199,7 @@ public class SequenceManager : MonoBehaviour
 
         //Game.Instance.cam.Reveal(target);
 
+        /*
         var revealCam = BaseCam.main.SwitchTo<CamReveal>();
         revealCam.target = target;
 
@@ -204,6 +208,8 @@ public class SequenceManager : MonoBehaviour
         {
             yield return null;
         }
+
+         */
     }
 
     public void FocusTarget(Transform target, System.Action onComplete = null)
@@ -333,14 +339,12 @@ public class SequenceManager : MonoBehaviour
 
         conversation.isTalking = false;
 
-        //conversation.actorA.PickMover();
-        //conversation.actorB.PickMover();
-
-
         GameStage.main.EnableMovement(true);
 
+        /*
         var talkScreen = UIManager.main.GetScreen<UIScreenMessage>();
         talkScreen.speech.Hide();
+        */
 
         Finish(onComplete);
     }
@@ -368,41 +372,58 @@ public class SequenceManager : MonoBehaviour
 
     IEnumerator SequenceTalkNode(Conversation conversation, TalkNode talkNode)
     {
-        Actor talkActor = talkNode.actor;
+        Actor host = talkNode.actor;
         bool left = false;
 
         switch (talkNode.talker)
         {
             case Talker.Host:
-                talkActor = conversation.host;
+                host = conversation.host;
                 left = true;
                 break;
             
+            /*
             case Talker.Player:
-                talkActor = AdventureStage.main.girl.actor;
+                host = AdventureStage.main.player.actor;
                 break;
 
-            case Talker.Sidekick:
-                talkActor = AdventureStage.main.cat.actor;
+            case Talker.Sidekick1:
+                host = AdventureStage.main.GetTeamMember(0);
                 break;
+            case Talker.Sidekick2:
+                host = AdventureStage.main.GetTeamMember(1);
+                break;
+            case Talker.Sidekick3:
+                host = AdventureStage.main.GetTeamMember(2);
+                break;
+             */
         }
 
+        int hostLayer = 0;
+        if (host != null)
+        {
+            hostLayer = host.gameObject.layer;
+            Utils.SetLayer(host.gameObject, LayerMask.NameToLayer("ActorTalking"));
+        }
+        /*
         var talkScreen = UIManager.main.GetScreen<UIScreenMessage>();
-        talkScreen.speech.Speek(talkActor, talkNode.speech, left);
-
-        //float msgTime = GetDisplayTime(talkNode.speech);
-        //yield return StartCoroutine(CoWaitForPress(msgTime));
+        talkScreen.speech.Speek(host, talkNode.speech, left);
 
         while (talkScreen.speech.speaking)
         {
             yield return null;
         }
 
+        if (host != null)
+        {
+            Utils.SetLayer(host.gameObject, hostLayer);
+        }
+
         if (talkNode.trigger != null)
         {
             talkNode.trigger.Trigger(true);
         }
-
+         */
         yield return null;
     }
 

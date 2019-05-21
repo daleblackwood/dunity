@@ -5,18 +5,10 @@ using UnityEngine;
 public class TalkTrigger : Triggerable 
 {
     public bool isTalking { get; protected set; }
-    public string condition;
     public Actor host;
     [HideInInspector] public List<TalkNode> talkNodes = new List<TalkNode>();
     public System.Action onComplete = null;
     public Conversation conversation { get; private set; }
-    public Conditions conditions;
-
-    protected override void Awake()
-    {
-        base.Awake();
-        isTargetable = false;
-    }
 
     protected override void OnTrigger()
     {
@@ -28,20 +20,6 @@ public class TalkTrigger : Triggerable
 
     public void Talk()
     {
-        /*
-            var actorA = Game.Instance.player;
-            var entityB = Game.Instance.player.targetFinder.target;
-            if (entityB == null)
-            {
-                entityB = Game.Instance.player.target;
-            }
-            if (entityB == null)
-            {
-                entityB = actorA.FindTarget(20.0f);
-            }
-            var actorB = entityB.castActor;
-            Talk(actorA, actorB);
-        */
         OnTalk();
     }
 
@@ -103,28 +81,12 @@ public class TalkTrigger : Triggerable
         }
     }
 
-    public bool ConditionPasses(string condition)
-    {
-        //if (string.IsNullOrEmpty(condition))
-        return true;
-
-        //return Game.Instance.saver.saveGame.GetBool(condition);
-    }
-
     void OnTriggerEnter(Collider other)
     {
         var player = other.GetComponent<Player>();
         if (player != null)
         {
-            var talkPicker = GetComponentInParent<TalkPicker>();
-            if (talkPicker != null)
-            {
-                talkPicker.Talk();
-            }
-            else
-            {
-                Talk();
-            }
+            Talk();
         }
     }
 }
