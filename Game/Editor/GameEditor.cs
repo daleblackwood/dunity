@@ -8,8 +8,10 @@ public class GameEditor : Editor
     {
         var game = (Game)target;
 
-        EditorGUILayout.LabelField("Mode", game.gameMode.GetType().ToString());
-        EditorGUILayout.LabelField("Save Slot", SaveData.main.slot.ToString());
+        var modeName = game.gameMode == null ? "(none)" : game.gameMode.GetType().Name;
+        var saveSlot = SaveData.main == null ? "(none)" : SaveData.main.slot.ToString();
+        EditorGUILayout.LabelField("Mode", modeName);
+        EditorGUILayout.LabelField("Save Slot", saveSlot);
 
         DrawDefaultInspector();
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public class ActorMover : GameBehaviour 
+public class ActorMover : MonoBehaviour 
 {
     private class WaterContact
     {
@@ -96,7 +96,7 @@ public class ActorMover : GameBehaviour
     // FIXME: Remove debug float
     public float debugFloat = 0.0f;
 
-    protected override void OnInit()
+    protected virtual void Awake()
     {
         body = GetComponent<Rigidbody>();
         body.constraints = RigidbodyConstraints.FreezeRotation;
@@ -110,16 +110,14 @@ public class ActorMover : GameBehaviour
         initSpeed = speed;
     }
 
-    protected override void OnEnable()
+    protected virtual void OnEnable()
     {
-        base.OnEnable();
         actioners = GetComponents<BaseActioner>();
         CancelMomentum();
     }
 
-    protected override void OnDisable()
+    protected virtual void OnDisable()
     {
-        base.OnDisable();
         CancelMomentum();
         if (animator != null)
         {
@@ -127,18 +125,15 @@ public class ActorMover : GameBehaviour
         }
     }
 
-    public override void Reset()
+    public void Reset()
     {
         CancelMomentum();
         speed = initSpeed;
         timeLastNonWater = Time.time;
-        base.Reset();
     }
 
     protected void FixedUpdate()
     {
-        if (isReady == false) return;
-
         UpdateWaterCollision();
         UpdateCollision();
 
