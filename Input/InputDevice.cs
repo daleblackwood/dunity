@@ -35,6 +35,7 @@ public abstract class InputDevice
             prevPressed[i] = pressed[i];
         }
 
+        UpdateDevice();
         UpdateButtonStates();
 
         var wasPressed = anyButtonIsPressed;
@@ -53,6 +54,8 @@ public abstract class InputDevice
 
         UpdateMotion();
     }
+
+    protected virtual void UpdateDevice(){}
 
     protected virtual void UpdateButtonStates(){}
 

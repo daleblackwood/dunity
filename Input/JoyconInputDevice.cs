@@ -4,11 +4,12 @@ using UnityEngine;
 public class JoyconInputDevice : InputDevice
 {
     public int joyconIndex = 0;
-    Joycon joycon;
-
-    public override void Init() 
+    JoyconDeviceProxy joycon;
+    
+    protected override void UpdateDevice()
     {
-        joycon = JoyconManager.Instance.j[0];
+        joycon = JoyconDeviceProxy.GetDevice(joyconIndex);
+        joycon.Update();
     }
 
     protected override void UpdateButtonStates()
@@ -23,18 +24,12 @@ public class JoyconInputDevice : InputDevice
 
     protected override void UpdateSticks()
     {
-        var stickAxes = joycon.GetStick();
-        moveStick.x = stickAxes[0];
-        moveStick.y = stickAxes[1];
+        moveStick = joycon.stick;
     }
 
     protected override void UpdateMotion()
     {
-        // Gyro values: x, y, z axis values (in radians per second)
-        var gv = joycon.GetGyro();
-        gyro = Quaternion.Euler(gv.x * gyroMulti.x, gv.y * gyroMulti.y, gv.z * gyroMulti.z);
-
-        // Accel values:  x, y, z axis values (in Gs)
-        accel = joycon.GetAccel();
+        gyro = joycon.gyro;
+        accel = joycon.accel;
     }
 }

@@ -69,8 +69,8 @@ public class CamOrbit : MonoBehaviour
         distance = Mathf.Clamp(distance, 2.0f, 10.0f);
 
         rotTo = Quaternion.identity;
-        rotTo *= Quaternion.AngleAxis(angle, Vector3.up);
-        rotTo *= Quaternion.AngleAxis(angleArc + 90.0f, Vector3.right);
+        rotTo *= Quaternion.AngleAxis(angle - 180.0f, Vector3.up);
+        rotTo *= Quaternion.AngleAxis(-angleArc + 90.0f, Vector3.right);
 
         var camOffset = rotTo * Vector3.up * distance;
 
